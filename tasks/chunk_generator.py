@@ -1,0 +1,63 @@
+import json
+import os
+from groq import Groq
+
+api_key = os.getenv("GROQ_API_KEY")
+
+client = Groq(api_key=api_key)
+
+instructions = """Analyze the given script and generate text string which represent parts of the script.
+When the script is converted to audio and played, these text strings should be able to be used as captions for the audio.
+Also, generate the estimate start timestamp for each text string when the script starts talking about the corresponding text string.
+
+You must return ONLY valid JSON.
+
+No natural language.
+No introduction.
+No explanation.
+
+If the output is not valid JSON, it will be rejected.
+
+Format:
+[
+  {
+    "start_timestamp": "mm:ss",
+    "end_timestamp": "mm:ss",
+    "text": "..."
+  },
+]
+
+Constraints:
+- The text strings should be concise and capture the essence of the corresponding part of the script.
+- The text strings should be in Hindi, as the script is in Hindi.
+- The text strings should be suitable for use as captions, so they should be clear and easy to read.
+- The estimated timestamps should be in the format "mm:ss" and should be based on the assumption that the script is narrated at a natural pace.
+- Return the output as a list of dictionaries, where each dictionary has two keys: "start_timestamp" and "text". 
+- The "start_timestamp" key should have the estimated start timestamp for the corresponding text string, and the "text" key should have the corresponding text string.
+
+Script:
+
+"""
+
+def generate_chunks(file_name, script):
+
+    prompt = instructions + "\n" + script
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    chunks = response.choices[0].message.content    
+
+    if chunks is None:
+        print("Failed to generate chunks.")
+        return None    
+
+    os.makedirs("GeneratedChunks", exist_ok=True)
+    with open(f"GeneratedChunks/{file_name}.json", "w", encoding="utf-8") as f:
+        f.write(chunks)
+
+    return chunks

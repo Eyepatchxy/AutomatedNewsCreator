@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+py311par/
+
+# Created files
+GeneratedAudios/
+GeneratedChunks/
+GeneratedScripts/
+GeneratedTimelines/
+GeneratedVideos/
+Backgrounds/
+
+# Environment variables
+.env
+
+Sample/

@@ -1,0 +1,12 @@
+# Core ML / audio stack
+numpy
+scipy
+pandas
+
+# Video processing
+moviepy
+
+# Utilities
+requests
+python-dotenv
+groq
