@@ -4,26 +4,29 @@ from moviepy import AudioFileClip, VideoFileClip
 import os
 import math
 from moviepy.video.fx import Loop
-from moviepy.video.fx import Resize
-from moviepy.video.fx import Crop
+from tasks.paths import BACKGROUNDS_DIR, GENERATED_VIDEOS_DIR
 from tasks.timeline_parser import build_timeline
 
 
-def generate_video(file_name, chunks, audio_file):
+def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS"):
 
-    audio = AudioFileClip("{audio_file}.wav")
+    if isinstance(chunks, str):
+        import json
+        chunks = json.loads(chunks)
+
+    audio = AudioFileClip(str(audio_file))
     duration = math.ceil(audio.duration)
 
     # Background (static or looped)
-    background = VideoFileClip("back.mp4")
-    background = background.loop(duration=duration)  
+    background = VideoFileClip(str(BACKGROUNDS_DIR / "back.mp4"))
+    background = background.with_effects([Loop(duration=duration)])
 
     timeline = build_timeline(file_name, chunks, duration)
 
     # Headline (static or long duration)
     headline = TextClip(
-        text="BREAKING NEWS",
-        font_size=70,
+        text=headline_text,
+        font_size=65,
         font="C:\\Users\\Acer\\AppData\\Local\\Microsoft\\Windows\\Fonts\\NotoSansDevanagari_Condensed-Bold.ttf",
         color="white",
         method="label",
@@ -38,10 +41,10 @@ def generate_video(file_name, chunks, audio_file):
     for chunk in timeline:
         text = TextClip(
             text=chunk["text"],
-            font_size=60,
+            font_size=50,
             font="C:\\Users\\Acer\\AppData\\Local\\Microsoft\\Windows\\Fonts\\NotoSansDevanagari_Condensed-Bold.ttf",   # ✅ IMPORTANT
             color='white',
-            size=(background.w - 200, None),
+            size=(background.w - 200, 300),
             method='caption',
             stroke_color='black',      # improves readability
             stroke_width=2
@@ -55,8 +58,13 @@ def generate_video(file_name, chunks, audio_file):
 
     final = final.with_audio(audio)
 
-    final.write_videofile(f"{file_name}.mp4", fps=24)
-
-    return f"{file_name}.mp4"
-    
+    os.makedirs(GENERATED_VIDEOS_DIR, exist_ok=True)
+    output_file = GENERATED_VIDEOS_DIR / f"{file_name}.mp4"
+    final.write_videofile(
+        str(output_file),
+        fps=24,
+        codec="libx264",
+        audio_codec="aac"
+    )
+    return str(output_file)
     

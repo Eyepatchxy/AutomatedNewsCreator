@@ -6,14 +6,16 @@ __pycache__/
 py311par/
 
 # Created files
+GeneratedContent/
 GeneratedAudios/
 GeneratedChunks/
 GeneratedScripts/
 GeneratedTimelines/
 GeneratedVideos/
+GeneratedThumbnails/
+UploadedVideos/
 Backgrounds/
 
 # Environment variables
 .env
-
-Sample/
+oAuthSecrets/
