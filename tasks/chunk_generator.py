@@ -1,6 +1,7 @@
 import json
 import os
 from groq import Groq
+from tasks.paths import GENERATED_CHUNKS_DIR
 
 api_key = os.getenv("GROQ_API_KEY")
 
@@ -56,8 +57,19 @@ def generate_chunks(file_name, script):
         print("Failed to generate chunks.")
         return None    
 
-    os.makedirs("GeneratedChunks", exist_ok=True)
-    with open(f"GeneratedChunks/{file_name}.json", "w", encoding="utf-8") as f:
-        f.write(chunks)
+    if isinstance(chunks, str):
+        chunks_text = chunks.strip()
+
+        if chunks_text.startswith("```"):
+            parts = chunks_text.split("```")
+            chunks_text = parts[1] if len(parts) > 1 else chunks_text
+            if chunks_text.startswith("json"):
+                chunks_text = chunks_text[4:].strip()
+
+        chunks = json.loads(chunks_text)
+
+    os.makedirs(GENERATED_CHUNKS_DIR, exist_ok=True)
+    with open(GENERATED_CHUNKS_DIR / f"{file_name}.json", "w", encoding="utf-8") as f:
+        json.dump(chunks, f, ensure_ascii=False, indent=2)
 
     return chunks

@@ -1,5 +1,6 @@
 import os
 from groq import Groq
+from tasks.paths import GENERATED_SCRIPTS_DIR
 
 api_key = os.getenv("GROQ_API_KEY")
 
@@ -61,9 +62,9 @@ def generate_script(file_name, article_text):
 
     if script:
 
-        os.makedirs("GeneratedScripts", exist_ok=True)
+        os.makedirs(GENERATED_SCRIPTS_DIR, exist_ok=True)
         
-        file_path = f"GeneratedScripts/{file_name}.txt"
+        file_path = GENERATED_SCRIPTS_DIR / f"{file_name}.txt"
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(script)
 

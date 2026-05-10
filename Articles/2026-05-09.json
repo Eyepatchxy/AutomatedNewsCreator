@@ -1,0 +1,15 @@
+{
+  "title": "New AI Model Achieves Breakthrough in Protein Folding Prediction",
+  "details": "A recently unveiled artificial intelligence model has demonstrated unprecedented accuracy in predicting the 3D structures of proteins. This advancement holds significant implications for drug discovery and understanding biological processes, potentially accelerating research in medicine and biotechnology.",
+  "type": "tech",
+  "image_urls": [
+    "https://example.com/ai_protein_folding.jpg"
+  ],
+  "source": "TechCrunch",
+  "keywords": [
+    "AI",
+    "protein folding",
+    "biotechnology",
+    "drug discovery"
+  ]
+}

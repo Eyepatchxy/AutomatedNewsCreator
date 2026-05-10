@@ -1,5 +1,6 @@
 import json
 import os
+from tasks.paths import GENERATED_TIMELINES_DIR
 
 def build_timeline(file_name, chunks, duration):
     timeline = []
@@ -19,8 +20,8 @@ def build_timeline(file_name, chunks, duration):
             "text": chunks[i]["text"]
         })
 
-    os.makedirs("GeneratedTimelines", exist_ok=True)
-    with open(f"GeneratedTimelines/{file_name}.json", "w", encoding="utf-8") as f:
+    os.makedirs(GENERATED_TIMELINES_DIR, exist_ok=True)
+    with open(GENERATED_TIMELINES_DIR / f"{file_name}.json", "w", encoding="utf-8") as f:
         json.dump(timeline, f, ensure_ascii=False, indent=4)
 
     return timeline

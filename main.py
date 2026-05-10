@@ -10,11 +10,12 @@ from tasks.news_extractor import get_news
 from tasks.script_generator import generate_script
 from tasks.chunk_generator import generate_chunks
 from tasks.video_generator import generate_video
+from tasks.paths import GENERATED_AUDIOS_DIR, GENERATED_CHUNKS_DIR
 
-file_name = "test"  # datetime.now().strftime("%Y-%m-%d")
-audio_file = f"GeneratedAudios/heh.wav"
+file_name = "test"  # datetime.now().strftime("%Y-%m-%d_%H-%M-%S_slug")
+audio_file = GENERATED_AUDIOS_DIR / "heh.wav"
 
-with open("GeneratedChunks/2026-04-22_01-02-26.json", "r", encoding="utf-8") as f:
+with open(GENERATED_CHUNKS_DIR / "2026-04-22_01-02-26.json", "r", encoding="utf-8") as f:
     chunks = json.load(f)
 
 
@@ -38,4 +39,4 @@ with open("GeneratedChunks/2026-04-22_01-02-26.json", "r", encoding="utf-8") as 
 # audio_file = generate_audio(file_name, script)
 
 # Generate video
-video_file = generate_video(file_name, chunks, audio_file)
+video_file = generate_video(file_name, chunks, str(audio_file))
