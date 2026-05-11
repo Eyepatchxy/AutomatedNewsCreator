@@ -22,6 +22,7 @@ Instructions:
 4. Avoid minor or redundant news.
 5. Each news item must be clearly distinct.
 6. Do prioritize news that has significant implications or widespread interest.
+7. Order keywords by relevance to the main news topic.
 
 Output format (STRICT JSON):
 {
@@ -30,7 +31,7 @@ Output format (STRICT JSON):
       "title": "...",
       "details": "...",
       "type": "politics/tech/business/global",
-      "image_urls": ["...", "..."],
+      "hook": ["..."],
       "source": "...",
       "keywords": ["...", "..."]
     }
@@ -39,7 +40,7 @@ Output format (STRICT JSON):
 
 Constraints:
 - Only return one news item.
-- Summary must be 2-3 lines
+- Hook must be a one short hindi sentence that sounds interesting and makes people want to read the article.
 - No duplicate or overlapping stories
 - No explanations outside JSON
 """
