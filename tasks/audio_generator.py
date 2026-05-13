@@ -74,5 +74,6 @@ def generate_audio(
     GENERATED_AUDIOS_DIR.mkdir(parents=True, exist_ok=True)
     output_file = GENERATED_AUDIOS_DIR / f"{file_name}.{codec}"
     output_file.write_bytes(response.content)
+    print(f"[INFO] Audio generated")
 
     return str(Path(output_file))

@@ -9,12 +9,12 @@ from tasks.paths import GENERATED_THUMBNAILS_DIR
 
 
 XAI_IMAGE_URL = "https://api.x.ai/v1/images/generations"
-DEFAULT_MODEL = "grok-imagine-image-quality"
+DEFAULT_MODEL = "grok-imagine-image"
 MAX_RETRIES = 3
-DEFAULT_SIZE = "1280x720"  # 1792×1024
+DEFAULT_SIZE = "1792x1024"  # 1792×1024, 1280x720
 
 
-def thumbnail_generator(
+def generate_thumbnail(
     file_name,
     *,
     model=DEFAULT_MODEL,
@@ -36,8 +36,8 @@ def thumbnail_generator(
     keywords = article_data.get("keywords", [])
     keyword = keywords[0] if keywords else ""
 
-    hooks = article_data.get("hook", [])
-    hook = hooks[0] if hooks else ""
+    hook = article_data.get("hook", "").strip()
+    hook = hook if hook else ""
 
     if not title:
         raise ValueError("Article title is missing.")
@@ -91,8 +91,7 @@ def thumbnail_generator(
 
     payload = {
         "model": model,
-        "prompt": prompt,
-        "size": size,
+        "prompt": prompt
     }
 
     headers = {
@@ -139,5 +138,6 @@ def thumbnail_generator(
     output_file = GENERATED_THUMBNAILS_DIR / f"{file_name}.{image_format}"
 
     output_file.write_bytes(image_response.content)
+    print("[INFO] Thumbnail generated")
 
     return str(output_file)

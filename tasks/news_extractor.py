@@ -23,15 +23,17 @@ Instructions:
 5. Each news item must be clearly distinct.
 6. Do prioritize news that has significant implications or widespread interest.
 7. Order keywords by relevance to the main news topic.
+8. "title_hi" should be the hindi translation of the title.
 
 Output format (STRICT JSON):
 {
   "news": [
     {
       "title": "...",
+      "title_hi": "...",
       "details": "...",
       "type": "politics/tech/business/global",
-      "hook": ["..."],
+      "hook": "...",
       "source": "...",
       "keywords": ["...", "..."]
     }
@@ -103,6 +105,7 @@ def get_news(file_name=None, previous_topics=None):
 
             if file_name:
                 save_article(file_name, news_list[0])
+                print("[INFO] Article saved:")
 
             return news_list[0], len(news_list)
 

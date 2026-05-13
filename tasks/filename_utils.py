@@ -22,4 +22,5 @@ def slugify(text: str, fallback: str = "news-update", max_length: int = 60) -> s
 def build_file_name(title: str, created_at: datetime | None = None) -> str:
     created_at = created_at or datetime.now()
     timestamp = created_at.strftime("%Y-%m-%d_%H-%M-%S")
+    print("[INFO] File name built")
     return f"{timestamp}_{slugify(title)}"

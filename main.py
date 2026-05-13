@@ -3,11 +3,15 @@ load_dotenv()
 
 import argparse
 import sys
+import math
+from moviepy import AudioFileClip
 
 from tasks.audio_generator import generate_audio
 from tasks.chunk_generator import generate_chunks
 from tasks.filename_utils import build_file_name
-from tasks.thumbnail_generator import thumbnail_generator
+from tasks.thumbnail_generator import generate_thumbnail
+from tasks.timeline_parser import build_timeline
+from tasks.backimage_generator import generate_backimages
 from tasks.news_extractor import get_news, save_article
 from tasks.script_generator import generate_script
 from tasks.video_generator import generate_video
@@ -32,14 +36,21 @@ def run_pipeline(upload=False, privacy=DEFAULT_PRIVACY_STATUS, dry_run_upload=Fa
     article_details = article.get("details", "")
     script = generate_script(file_name, article_details)
     chunks = generate_chunks(file_name, script)
-    thumbnail_file = thumbnail_generator(file_name, model="grok-imagine-image-quality", size="1280x720")
+    thumbnail_file = generate_thumbnail(file_name)
     audio_file = generate_audio(file_name, script)
+
+    audio = AudioFileClip(str(audio_file))
+    duration = math.ceil(audio.duration)
+
+    timeline = build_timeline(file_name, chunks, duration)
+    backimages = generate_backimages(file_name, timeline, duration)
+    headline=build_headline_text(article)
 
     video_file = generate_video(
         file_name,
         chunks,
         audio_file,
-        headline_text=build_headline_text(article),
+        headline,
     )
 
     print("Pipeline complete.")

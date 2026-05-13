@@ -23,6 +23,7 @@ def build_timeline(file_name, chunks, duration):
     os.makedirs(GENERATED_TIMELINES_DIR, exist_ok=True)
     with open(GENERATED_TIMELINES_DIR / f"{file_name}.json", "w", encoding="utf-8") as f:
         json.dump(timeline, f, ensure_ascii=False, indent=4)
+    print(f"[INFO] Timeline saved")
 
     return timeline
 
