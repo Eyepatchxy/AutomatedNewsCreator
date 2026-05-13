@@ -71,5 +71,6 @@ def generate_chunks(file_name, script):
     os.makedirs(GENERATED_CHUNKS_DIR, exist_ok=True)
     with open(GENERATED_CHUNKS_DIR / f"{file_name}.json", "w", encoding="utf-8") as f:
         json.dump(chunks, f, ensure_ascii=False, indent=2)
+    print(f"[INFO] Chunks saved")
 
     return chunks

@@ -1,11 +1,10 @@
 from pathlib import Path
 
-
 GENERATED_DIR = Path("Generated")
 
 ARTICLES_DIR = Path("Articles")
-BACKGROUNDS_DIR = Path("Backgrounds")
 
+GENERATED_BACKIMAGES_DIR = GENERATED_DIR / "Backimages"
 GENERATED_AUDIOS_DIR = GENERATED_DIR / "Audios"
 GENERATED_CHUNKS_DIR = GENERATED_DIR / "Chunks"
 GENERATED_SCRIPTS_DIR = GENERATED_DIR / "Scripts"
