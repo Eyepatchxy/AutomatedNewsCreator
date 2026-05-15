@@ -1,9 +1,13 @@
 from pathlib import Path
 
+NEWS_POOL_FILE = Path("news_pool.json")
+
+OAUTH_DIR = Path("oAuthSecrets")
+OAUTH_TOKEN_FILE = OAUTH_DIR / "youtube_token.json"
+
 GENERATED_DIR = Path("Generated")
 
-ARTICLES_DIR = Path("Articles")
-
+GENERATED_ARTICLES_DIR = GENERATED_DIR / "Articles"
 GENERATED_BACKIMAGES_DIR = GENERATED_DIR / "Backimages"
 GENERATED_AUDIOS_DIR = GENERATED_DIR / "Audios"
 GENERATED_CHUNKS_DIR = GENERATED_DIR / "Chunks"
