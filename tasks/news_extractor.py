@@ -2,7 +2,7 @@ import json
 import time
 import os
 from google import genai
-from tasks.paths import ARTICLES_DIR
+from tasks.paths import GENERATED_ARTICLES_DIR
 
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key) if api_key else None
@@ -72,8 +72,8 @@ def parse_news_response(text):
 
 
 def save_article(file_name, article):
-    os.makedirs(ARTICLES_DIR, exist_ok=True)
-    with open(ARTICLES_DIR / f"{file_name}.json", "w", encoding="utf-8") as f:
+    os.makedirs(GENERATED_ARTICLES_DIR, exist_ok=True)
+    with open(GENERATED_ARTICLES_DIR / f"{file_name}.json", "w", encoding="utf-8") as f:
         json.dump(article, f, ensure_ascii=False, indent=2)
 
 

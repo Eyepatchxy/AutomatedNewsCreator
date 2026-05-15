@@ -11,20 +11,20 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from tasks.paths import (
-    ARTICLES_DIR,
+    GENERATED_ARTICLES_DIR,
     GENERATED_THUMBNAILS_DIR,
     GENERATED_VIDEOS_DIR,
     UPLOADED_VIDEOS_DIR,
+    OAUTH_TOKEN_FILE
 )
 
 
 SCOPES = ["https://www.googleapis.com/auth/youtube"]
-OAUTH_DIR = Path("oAuthSecrets")
-TOKEN_FILE = OAUTH_DIR / "youtube_token.json"
 VIDEO_DIR = GENERATED_VIDEOS_DIR
 THUMBNAIL_DIR = GENERATED_THUMBNAILS_DIR
-ARTICLE_DIR = ARTICLES_DIR
+ARTICLE_DIR = GENERATED_ARTICLES_DIR
 UPLOAD_RECORD_DIR = UPLOADED_VIDEOS_DIR
+TOKEN_FILE = OAUTH_TOKEN_FILE
 
 DEFAULT_PRIVACY_STATUS = "public"
 NEWS_CATEGORY_ID = "25"
@@ -125,7 +125,7 @@ def limit_tags(tags: list[str], max_chars: int = 500) -> list[str]:
 def build_description(article: dict, tags: list[str]) -> str:
     details = article.get("details") or ""
     source = article.get("source") or ""
-    title = article.get("title") or "Latest news update"
+    title = article.get("title_hi") or "Latest news update"
     hashtag_line = " ".join(tag for tag in tags if tag.startswith("#"))
 
     sections = [title, details]
@@ -141,7 +141,7 @@ def build_upload_metadata(file_name: str, privacy_status: str = DEFAULT_PRIVACY_
     article = load_article(file_name)
     keywords = article.get("keywords") or []
     article_type = article.get("type") or ""
-    title = clean_title(article.get("title"), fallback=f"{file_name} news update")
+    title = clean_title(article.get("title_hi"), fallback=f"{file_name} news update")
     tags = limit_tags([*keywords, article_type, *GENERIC_TAGS])
     description = build_description(article, tags)
 

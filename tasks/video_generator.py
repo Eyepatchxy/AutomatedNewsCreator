@@ -83,11 +83,13 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
             font_size=65,
             font=FONT_PATH,
             color="white",
-            method="label",
+            method="caption",
+            size=(1800, 180),
             stroke_color="black",
             stroke_width=2,
+            text_align="center",
         )
-        .with_position(("center", "top"))
+        .with_position(("center", 10))
         .with_duration(duration)
     )
 
@@ -98,20 +100,25 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
         subtitle = (
             TextClip(
                 text=chunk["text"],
-                font_size=42,
+                font_size=56,
                 font=FONT_PATH,
                 color="white",
-                size=(1760, 420),
+                size=(1820, 520),
                 method="caption",
                 stroke_color="black",
                 stroke_width=3,
             )
-            .with_position(("center", 760))
+            .with_position(
+                lambda t: (
+                    "center",
+                    760 - 20 * (t / (chunk["end"] - chunk["start"])),
+                )
+            )
             .with_start(chunk["start"])
             .with_duration(chunk["end"] - chunk["start"])
             .with_effects([
                 vfx.FadeIn(0.2),
-                vfx.FadeOut(0.2)
+                vfx.FadeOut(0.2),
             ])
         )
 

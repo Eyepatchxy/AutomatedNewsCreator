@@ -65,7 +65,7 @@ def run_pipeline(upload=False, privacy=DEFAULT_PRIVACY_STATUS, dry_run_upload=Fa
             dry_run=dry_run_upload,
         )
         if dry_run_upload:
-            print(f"YouTube dry-run record saved for: {file_name}")
+            print(f"YouTube dry-run record saved")
         else:
             print(f"YouTube video uploaded: {upload_record['youtube_url']}")
 

@@ -31,6 +31,7 @@ STRICT RULES:
 - Return the script as plain text, do add spaces and new lines for pauses, and necessary punctuation, but do NOT add any scene directions or captions.
 - The script should be in natural spoken Hindi, not formal or literary Hindi.
 - The script should be in devnagri script, not romanized Hindi.
+- Use English script only for words that are widely used in Hindi (e.g., "Subscribe", "Like")
 
 Constraints:
 - Write the script in natural spoken Hindi (not formal or literary Hindi)
