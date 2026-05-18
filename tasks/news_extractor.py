@@ -1,116 +1,67 @@
 import json
 import time
-import os
-from google import genai
-from tasks.paths import GENERATED_ARTICLES_DIR
+from tasks.ExtractionTools.channelwise_news_extractor import (
+    create_youtube_client,
+    get_recent_videos,
+)
+from tasks.ExtractionTools.deduplicator import semantic_deduplicate
+from tasks.ExtractionTools.news_verifier import verify_news
 
-api_key = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key) if api_key else None
+youtube_client = create_youtube_client()
 
-instruction = """You are a news aggregation system.
-
-Your task is to return the latest, important, and NON-REPEATED news.
-
-Context:
-Previously covered topics:
-{previous_topics}
-
-Instructions:
-1. Do NOT repeat any news that matches or is similar to previously covered topics.
-2. If a story is an update, include ONLY if there is a significant new development.
-3. Prioritize fresh, high-impact, and diverse topics (politics, tech, business, global).
-4. Avoid minor or redundant news.
-5. Each news item must be clearly distinct.
-6. Do prioritize news that has significant implications or widespread interest.
-7. Order keywords by relevance to the main news topic.
-8. "title_hi" should be the hindi translation of the title.
-
-Output format (STRICT JSON):
-{
-  "news": [
-    {
-      "title": "...",
-      "title_hi": "...",
-      "details": "...",
-      "type": "politics/tech/business/global",
-      "hook": "...",
-      "source": "...",
-      "keywords": ["...", "..."]
-    }
-  ]
-}
-
-Constraints:
-- Only return one news item.
-- Hook must be a one short hindi sentence that sounds interesting and makes people want to read the article.
-- No duplicate or overlapping stories
-- No explanations outside JSON
-"""
+get_recent_videos(youtube_client)
+semantic_deduplicate()
+verify_news()
 
 
-def parse_news_response(text):
-    text = text.strip()
 
-    if text.startswith("```"):
-        parts = text.split("```")
-        text = parts[1] if len(parts) > 1 else text
-        text = text.strip()
+# def _is_previous_topic(story, previous_topics):
+#     if not previous_topics:
+#         return False
 
-    if text.startswith("json"):
-        text = text[4:].strip()
+#     story_text = normalize_text(
+#         " ".join(
+#             [
+#                 story.get("cluster_topic", ""),
+#                 story.get("news_description", ""),
+#                 story.get("title", ""),
+#                 story.get("description", ""),
+#             ]
+#         )
+#     )
 
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        start = text.find("{")
-        end = text.rfind("}")
+#     for topic in previous_topics:
+#         previous_topic = normalize_text(topic)
+#         if previous_topic and previous_topic in story_text:
+#             return True
 
-        if start == -1 or end == -1 or end <= start:
-            raise
-
-        return json.loads(text[start:end + 1])
-
-
-def save_article(file_name, article):
-    os.makedirs(GENERATED_ARTICLES_DIR, exist_ok=True)
-    with open(GENERATED_ARTICLES_DIR / f"{file_name}.json", "w", encoding="utf-8") as f:
-        json.dump(article, f, ensure_ascii=False, indent=2)
+#     return False
 
 
-def get_news(file_name=None, previous_topics=None):
-    previous_topics = previous_topics or []
-    for attempt in range(5):
-        try:
-            if not api_key:
-                raise Exception("GEMINI_API_KEY not found")
+# def _filter_previous_topics(stories, previous_topics):
+#     if not previous_topics:
+#         return stories
 
-            prompt = instruction.replace("{previous_topics}", "\n".join(previous_topics))
+#     return [
+#         story
+#         for story in stories
+#         if not _is_previous_topic(story, previous_topics)
+#     ]
 
-            response = client.models.generate_content(
-                model="gemini-2.5-flash-lite",
-                contents=prompt
-            )
 
-            text = response.text
-            # print("Raw news response:", text)
+# def _save_processed_stories(stories):
+#     PROCESSED_NEWS_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-            if text is None:
-                raise Exception("No response from API")
+#     with open(PROCESSED_NEWS_FILE, "w", encoding="utf-8") as f:
+#         json.dump(stories, f, indent=4, ensure_ascii=False)
 
-            data = parse_news_response(text)
 
-            news_list = data.get("news", [])
-            if not news_list:
-                raise Exception("No news returned")
+# def _extract_verified_article(verified_data):
+#     if not verified_data:
+#         return None
 
-            if file_name:
-                save_article(file_name, news_list[0])
-                print("[INFO] Article saved:")
+#     for article in verified_data.get("articles", []):
+#         if article.get("isTrue"):
+#             return article
 
-            return news_list[0], len(news_list)
-
-        except Exception as e:
-            print(f"Attempt {attempt + 1} failed: {e}")
-            time.sleep(2)
-
-    raise Exception("Failed to fetch news after multiple attempts")
+#     return None

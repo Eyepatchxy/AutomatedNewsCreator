@@ -9,7 +9,12 @@ py311par/
 Generated/
 UploadedVideos/
 Backgrounds/
+Articles/
+recent_videos.json
 
 # Environment variables
 .env
 oAuthSecrets/
+
+# IDE specific
+.vscode/

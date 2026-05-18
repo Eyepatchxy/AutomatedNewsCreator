@@ -1,12 +1,16 @@
 import json
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
-from tasks.paths import OAUTH_TOKEN_FILE
+from tasks.paths import OAUTH_TOKEN_FILE, RAW_NEWS_POOL_FILE
+from tasks.ExtractionTools.deduplicator import normalize_text
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-channels = json.load(open("channels.json"))["channels"]
+CHANNELS_FILE = Path(__file__).with_name("channels.json")
+channels = json.load(open(CHANNELS_FILE, encoding="utf-8"))["channels"]
 
+MAX_RESULTS_PER_CHANNEL = 5
 
 def create_youtube_client():
     """
@@ -55,7 +59,7 @@ def get_recent_videos(
     youtube,
     channels = channels,
     days=7,
-    output_file="recent_videos.json"
+    output_file=RAW_NEWS_POOL_FILE
 ):
     """
     Fetch recent videos from channels
@@ -87,21 +91,21 @@ def get_recent_videos(
             type="video",
             order="date",
             publishedAfter=published_after,
-            maxResults=50
+            maxResults=MAX_RESULTS_PER_CHANNEL
         ).execute()
 
         for item in response.get("items", []):
 
             video = {
-                "video_id": item["id"]["videoId"],
+                "video_id": normalize_text(item["id"]["videoId"]),
 
-                "title": item["snippet"]["title"],
+                "title": normalize_text(item["snippet"]["title"]),
 
-                "description": item["snippet"]["description"],
+                "description": normalize_text(item["snippet"]["description"]),
 
                 "published_at": item["snippet"]["publishedAt"],
 
-                "channel": item["snippet"]["channelTitle"],
+                "channel": normalize_text(item["snippet"]["channelTitle"]),
 
                 "channel_id": channel_id,
 
@@ -114,6 +118,9 @@ def get_recent_videos(
             }
 
             all_videos.append(video)
+
+    output_file = Path(output_file)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
 
     # Save JSON
     with open(output_file, "w", encoding="utf-8") as f:

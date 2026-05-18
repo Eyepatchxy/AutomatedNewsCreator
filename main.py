@@ -12,10 +12,12 @@ from tasks.filename_utils import build_file_name
 from tasks.thumbnail_generator import generate_thumbnail
 from tasks.timeline_parser import build_timeline
 from tasks.backimage_generator import generate_backimages
-from tasks.news_extractor import get_news, save_article
+from tasks.news_extractor import get_news
 from tasks.script_generator import generate_script
 from tasks.video_generator import generate_video
 from tasks.yt_posting import DEFAULT_PRIVACY_STATUS, publish_to_youtube
+from tasks.paths import GENERATED_ARTICLES_DIR
+from tasks.ExtractionTools.news_verifier import save_article
 
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -31,7 +33,7 @@ def build_headline_text(article):
 def run_pipeline(upload=False, privacy=DEFAULT_PRIVACY_STATUS, dry_run_upload=False):
     article, _ = get_news(previous_topics=[])
     file_name = build_file_name(article.get("title", "news-update"))
-    save_article(file_name, article)
+    save_article(file_name, article, output_dir=GENERATED_ARTICLES_DIR)
 
     article_details = article.get("details", "")
     script = generate_script(file_name, article_details)
