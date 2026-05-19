@@ -4,15 +4,14 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 
 
 SCOPES = ["https://www.googleapis.com/auth/youtube"]
-ROOT_DIR = Path(__file__).resolve().parent.parent
-OAUTH_DIR = ROOT_DIR / "oAuthSecrets"
-TOKEN_FILE = OAUTH_DIR / "youtube_token.json"
+BASE_DIR = Path(__file__).resolve().parent
+TOKEN_FILE = BASE_DIR / "youtube_token.json"
 
 
 def find_client_secret():
-    client_files = sorted(OAUTH_DIR.glob("client_secret*.json"))
+    client_files = sorted(BASE_DIR.glob("client_secret*.json"))
     if not client_files:
-        raise FileNotFoundError(f"No client_secret*.json file found in {OAUTH_DIR}")
+        raise FileNotFoundError(f"No client_secret*.json file found in {BASE_DIR}")
     return client_files[0]
 
 
