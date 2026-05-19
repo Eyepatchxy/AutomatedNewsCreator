@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
-from tasks.paths import OAUTH_TOKEN_FILE, RAW_NEWS_POOL_FILE
+from tasks.paths import TOKEN_FILE, RAW_NEWS_POOL_FILE
 from tasks.ExtractionTools.deduplicator import normalize_text
 
 from google.oauth2.credentials import Credentials
@@ -19,7 +19,7 @@ def create_youtube_client():
     """
 
     creds = Credentials.from_authorized_user_file(
-        OAUTH_TOKEN_FILE,
+        TOKEN_FILE,
     )
 
     youtube = build(
