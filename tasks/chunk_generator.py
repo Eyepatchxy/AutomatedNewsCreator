@@ -40,9 +40,17 @@ Script:
 
 """
 
-def generate_chunks(file_name, script):
+def generate_chunks(file_name, script, duration=None):
 
     prompt = instructions + "\n" + script
+    if duration:
+        prompt += (
+            "\n\nAudio duration constraint:\n"
+            f"- The final audio is {int(duration)} seconds long.\n"
+            "- Do not create any start_timestamp at or after the audio duration.\n"
+            "- The final caption should start before the audio ends.\n"
+            "- Spread captions naturally across the full audio duration.\n"
+        )
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",

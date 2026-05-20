@@ -17,10 +17,7 @@ from tasks.timeline_parser import build_timeline
 
 DURATION_PER_IMAGE = 30
 
-FONT_PATH = (
-    "C:\\Users\\Acer\\AppData\\Local\\Microsoft\\Windows\\Fonts\\"
-    "NotoSansDevanagari_Condensed-Bold.ttf"
-)
+FONT_PATH = "/home/eyepatchxy/.local/share/noto-sans-devanagari/NotoSansDevanagari-Bold.ttf"
 
 
 def create_background(file_name, duration):
@@ -62,7 +59,7 @@ def create_background(file_name, duration):
 
         clips.append(clip)
 
-    return concatenate_videoclips(clips, method="compose")
+    return concatenate_videoclips(clips, method="compose").with_duration(duration)
 
 
 def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS"):
@@ -96,6 +93,9 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
     text_clips = []
 
     for chunk in timeline:
+        chunk_duration = chunk["end"] - chunk["start"]
+        if chunk_duration <= 0:
+            continue
 
         subtitle = (
             TextClip(
@@ -111,11 +111,11 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
             .with_position(
                 lambda t: (
                     "center",
-                    760 - 20 * (t / (chunk["end"] - chunk["start"])),
+                    760 - 20 * (t / chunk_duration),
                 )
             )
             .with_start(chunk["start"])
-            .with_duration(chunk["end"] - chunk["start"])
+            .with_duration(chunk_duration)
             .with_effects([
                 vfx.FadeIn(0.2),
                 vfx.FadeOut(0.2),
@@ -127,7 +127,7 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
     final = CompositeVideoClip(
         [background, headline] + text_clips,
         size=(1920, 1080),
-    )
+    ).with_duration(duration)
 
     final = final.with_audio(audio)
 

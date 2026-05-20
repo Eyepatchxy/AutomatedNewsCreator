@@ -4,20 +4,41 @@ from tasks.paths import GENERATED_TIMELINES_DIR
 
 def build_timeline(file_name, chunks, duration):
     timeline = []
+    duration = int(duration)
 
-    for i in range(len(chunks)):
-        start = to_seconds(chunks[i]["start_timestamp"])
+    parsed_chunks = []
+    for chunk in chunks:
+        try:
+            start = to_seconds(chunk["start_timestamp"])
+        except (KeyError, TypeError, ValueError):
+            continue
 
-        if i < len(chunks) - 1:
-            next_start = to_seconds(chunks[i+1]["start_timestamp"])
-            end = next_start - 1
+        if start >= duration:
+            continue
+
+        parsed_chunks.append({
+            "start": start,
+            "text": chunk.get("text", "").strip(),
+        })
+
+    parsed_chunks.sort(key=lambda item: item["start"])
+
+    for i, chunk in enumerate(parsed_chunks):
+        start = chunk["start"]
+
+        if i < len(parsed_chunks) - 1:
+            next_start = parsed_chunks[i + 1]["start"]
+            end = min(next_start, duration)
         else:
-            end = duration  # ✅ no conversion
+            end = duration
+
+        if end <= start:
+            continue
 
         timeline.append({
             "start": start,
             "end": end,
-            "text": chunks[i]["text"]
+            "text": chunk["text"]
         })
 
     os.makedirs(GENERATED_TIMELINES_DIR, exist_ok=True)

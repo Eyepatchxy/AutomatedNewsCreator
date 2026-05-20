@@ -1,12 +1,17 @@
 import gradio as gr
 import subprocess
+import sys
+
+from tasks.paths import PROJECT_ROOT
+from tasks.yt_posting import list_unuploaded_videos
 
 
 def generate_only():
     try:
         subprocess.run(
-            ["python", "main.py"],
-            check=True
+            [sys.executable, "main.py"],
+            check=True,
+            cwd=PROJECT_ROOT,
         )
 
         return "Generated video successfully."
@@ -15,30 +20,56 @@ def generate_only():
         return f"Error:\n{e}"
 
 
-def upload_only():
-    try:
-        subprocess.run(
-            ["python", "upload_video.py"],
-            check=True
+def upload_only(file_name=None):
+    choices = list_unuploaded_videos()
+    file_name = (file_name or "").strip() if file_name else ""
+    if not file_name:
+        selected = choices[0] if choices else None
+        message = (
+            "Select an unuploaded video, then click Upload Only again."
+            if choices
+            else "No unuploaded videos found."
+        )
+        return message, gr.update(
+            choices=choices,
+            value=selected,
+            visible=True,
         )
 
-        return "Uploaded existing video."
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "tasks.yt_posting", file_name],
+            check=True,
+            cwd=PROJECT_ROOT,
+        )
+
+        updated_choices = list_unuploaded_videos()
+        return "Uploaded existing video.", gr.update(
+            choices=updated_choices,
+            value=updated_choices[0] if updated_choices else None,
+            visible=True,
+        )
 
     except subprocess.CalledProcessError as e:
-        return f"Error:\n{e}"
+        return f"Error:\n{e}", gr.update(
+            choices=choices,
+            value=file_name if file_name in choices else None,
+            visible=True,
+        )
 
 
 def generate_and_upload():
     try:
         subprocess.run(
             [
-                "python",
+                sys.executable,
                 "main.py",
                 "--upload",
                 "--privacy",
                 "public"
             ],
-            check=True
+            check=True,
+            cwd=PROJECT_ROOT,
         )
 
         return "Generated and uploaded video."
@@ -61,6 +92,13 @@ with gr.Blocks(theme=gr.themes.Soft()) as app:
         interactive=False
     )
 
+    upload_file_name = gr.Dropdown(
+        label="Unuploaded videos",
+        choices=[],
+        visible=False,
+        interactive=True,
+    )
+
     with gr.Row():
 
         generate_btn = gr.Button("Generate Only")
@@ -74,7 +112,8 @@ with gr.Blocks(theme=gr.themes.Soft()) as app:
 
     upload_btn.click(
         fn=upload_only,
-        outputs=output
+        inputs=upload_file_name,
+        outputs=[output, upload_file_name]
     )
 
     both_btn.click(

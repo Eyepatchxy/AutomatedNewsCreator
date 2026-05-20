@@ -115,7 +115,7 @@ def verify_news(
             {{
             "title": "...",
             "title_hi": "...",
-            "details": "...",
+            "details": "A factual verified summary with enough concrete context for a 75-90 second Hindi news script. Include only verified facts, key people/organizations, location, what happened, and current status. Do not add speculation.",
             "type": "politics/tech/business/global",
             "hook": "...",
             "source": "...",
@@ -156,6 +156,7 @@ def verify_news(
             if article.get("isTrue"):
 
                 file_name = build_file_name(article.get("title", "news-update"))
+                article["file_name"] = file_name
                 save_article(file_name, article)        
 
        
@@ -172,6 +173,8 @@ def verify_news(
 
 def save_article(file_name, article, output_dir=OUTPUT_DIR):
     os.makedirs(output_dir, exist_ok=True)
+    article_to_save = dict(article)
+    article_to_save.setdefault("file_name", file_name)
 
     with open(
         os.path.join(output_dir, f"{file_name}.json"),
@@ -180,7 +183,7 @@ def save_article(file_name, article, output_dir=OUTPUT_DIR):
     ) as f:
 
         json.dump(
-            article,
+            article_to_save,
             f,
             ensure_ascii=False,
             indent=2

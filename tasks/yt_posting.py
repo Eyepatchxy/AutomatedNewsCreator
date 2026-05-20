@@ -5,11 +5,6 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from googleapiclient.http import MediaFileUpload
 from tasks.paths import (
     GENERATED_ARTICLES_DIR,
     GENERATED_THUMBNAILS_DIR,
@@ -44,6 +39,9 @@ GENERIC_TAGS = [
 
 
 def load_credentials(token_file: Path = TOKEN_FILE) -> Credentials:
+    from google.auth.transport.requests import Request
+    from google.oauth2.credentials import Credentials
+
     if not token_file.exists():
         raise FileNotFoundError(
             f"YouTube token not found: {token_file}. "
@@ -65,6 +63,8 @@ def load_credentials(token_file: Path = TOKEN_FILE) -> Credentials:
 
 
 def get_youtube_client():
+    from googleapiclient.discovery import build
+
     return build("youtube", "v3", credentials=load_credentials())
 
 
@@ -162,6 +162,8 @@ def build_upload_metadata(file_name: str, privacy_status: str = DEFAULT_PRIVACY_
 
 
 def upload_video(youtube, video_path: Path, metadata: dict) -> dict:
+    from googleapiclient.http import MediaFileUpload
+
     media = MediaFileUpload(
         str(video_path),
         mimetype="video/mp4",
@@ -182,6 +184,8 @@ def upload_video(youtube, video_path: Path, metadata: dict) -> dict:
 
 
 def set_thumbnail(youtube, video_id: str, thumbnail_path: Path) -> dict:
+    from googleapiclient.http import MediaFileUpload
+
     media = MediaFileUpload(str(thumbnail_path), resumable=True)
     return youtube.thumbnails().set(
         videoId=video_id,
@@ -197,6 +201,80 @@ def save_upload_record(file_name: str, record: dict) -> Path:
     return record_path
 
 
+def load_upload_record(file_name: str) -> dict:
+    record_path = UPLOAD_RECORD_DIR / f"{file_name}.json"
+    if not record_path.exists():
+        return {}
+
+    with record_path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def is_uploaded_record(record: dict) -> bool:
+    if "uploadedStatus" in record:
+        return bool(record["uploadedStatus"])
+    return record.get("status") == "uploaded" or bool(record.get("youtube_url"))
+
+
+def build_video_record(
+    file_name: str,
+    privacy_status: str = DEFAULT_PRIVACY_STATUS,
+    dry_run: bool = False,
+) -> dict:
+    video_path = find_video(file_name)
+    thumbnail_path = find_thumbnail(file_name)
+    existing_record = load_upload_record(file_name)
+    now = datetime.now(timezone.utc).isoformat()
+
+    record = {
+        **existing_record,
+        "file_name": file_name,
+        "video_path": str(video_path),
+        "thumbnail_path": str(thumbnail_path) if thumbnail_path else None,
+        "metadata": build_upload_metadata(file_name, privacy_status),
+        "dry_run": dry_run,
+        "uploadedStatus": is_uploaded_record(existing_record),
+        "updated_at": now,
+    }
+
+    if "generated_at" not in record:
+        record["generated_at"] = now
+
+    return record
+
+
+def save_generated_video_record(
+    file_name: str,
+    privacy_status: str = DEFAULT_PRIVACY_STATUS,
+) -> dict:
+    record = build_video_record(file_name, privacy_status=privacy_status)
+    record["status"] = "uploaded" if record["uploadedStatus"] else "generated"
+    save_upload_record(file_name, record)
+    return record
+
+
+def list_unuploaded_videos() -> list[str]:
+    UPLOAD_RECORD_DIR.mkdir(exist_ok=True)
+    unuploaded = set()
+
+    for record_path in UPLOAD_RECORD_DIR.glob("*.json"):
+        try:
+            with record_path.open("r", encoding="utf-8") as f:
+                record = json.load(f)
+        except json.JSONDecodeError:
+            continue
+
+        file_name = record.get("file_name") or record_path.stem
+        if not is_uploaded_record(record):
+            unuploaded.add(file_name)
+
+    for video_path in VIDEO_DIR.glob("*.mp4"):
+        if not is_uploaded_record(load_upload_record(video_path.stem)):
+            unuploaded.add(video_path.stem)
+
+    return sorted(unuploaded)
+
+
 def publish_to_youtube(
     file_name: str,
     privacy_status: str = DEFAULT_PRIVACY_STATUS,
@@ -204,38 +282,38 @@ def publish_to_youtube(
 ) -> dict:
     video_path = find_video(file_name)
     thumbnail_path = find_thumbnail(file_name)
-    metadata = build_upload_metadata(file_name, privacy_status)
-
-    record = {
-        "file_name": file_name,
-        "video_path": str(video_path),
-        "thumbnail_path": str(thumbnail_path) if thumbnail_path else None,
-        "metadata": metadata,
-        "dry_run": dry_run,
-        "uploaded_at": datetime.now(timezone.utc).isoformat(),
-    }
+    record = build_video_record(
+        file_name,
+        privacy_status=privacy_status,
+        dry_run=dry_run,
+    )
 
     if dry_run:
         record["status"] = "dry_run"
+        record["uploadedStatus"] = False
         record["thumbnail_status"] = "found" if thumbnail_path else "not_found"
         save_upload_record(file_name, record)
         return record
 
     youtube = get_youtube_client()
-    upload_response = upload_video(youtube, video_path, metadata)
+    upload_response = upload_video(youtube, video_path, record["metadata"])
     video_id = upload_response["id"]
 
     record.update(
         {
             "status": "uploaded",
+            "uploadedStatus": True,
             "video_id": video_id,
             "youtube_url": f"https://www.youtube.com/watch?v={video_id}",
             "upload_response": upload_response,
             "thumbnail_status": "not_found",
+            "uploaded_at": datetime.now(timezone.utc).isoformat(),
         }
     )
 
     if thumbnail_path:
+        from googleapiclient.errors import HttpError
+
         try:
             record["thumbnail_response"] = set_thumbnail(youtube, video_id, thumbnail_path)
             record["thumbnail_status"] = "uploaded"
