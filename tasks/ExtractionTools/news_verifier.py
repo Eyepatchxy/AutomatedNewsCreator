@@ -2,16 +2,57 @@ import json
 import os
 from google import genai
 from google.genai import types
-from tasks.paths import PROCESSED_NEWS_FILE, PENDING_ARTICLES_DIR
+from groq import Groq
+from tasks.paths import PROCESSED_NEWS_FILE, GENERATED_ARTICLES_DIR
 from tasks.filename_utils import build_file_name
 
 INPUT_FILE = PROCESSED_NEWS_FILE
-OUTPUT_DIR = PENDING_ARTICLES_DIR 
+OUTPUT_DIR = GENERATED_ARTICLES_DIR 
+GEMINI_MODEL = "gemini-1.5-flash"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 
 client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
 )
+groq_client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
+
+
+def generate_with_gemini(prompt):
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.2,
+            response_mime_type="application/json",
+            tools=[
+                types.Tool(
+                    google_search=types.GoogleSearch()
+                )
+            ]
+        )
+    )
+
+    return response.text
+
+
+def generate_with_groq(prompt):
+    response = groq_client.chat.completions.create(
+        model=GROQ_MODEL,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.2,
+        response_format={"type": "json_object"},
+        timeout=60
+    )
+
+    return response.choices[0].message.content
 
 
 def verify_news(
@@ -74,7 +115,7 @@ def verify_news(
             {{
             "title": "...",
             "title_hi": "...",
-            "details": "...",
+            "details": "A factual verified summary with enough concrete context for a 75-90 second Hindi news script. Include only verified facts, key people/organizations, location, what happened, and current status. Do not add speculation.",
             "type": "politics/tech/business/global",
             "hook": "...",
             "source": "...",
@@ -89,29 +130,33 @@ def verify_news(
         print("No priority 1 news found")
         return None
 
-    response = client.models.generate_content(
-        model="gemini-2.5-pro",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            temperature=0.2,
-            response_mime_type="application/json",
-            tools=[
-                types.Tool(
-                    google_search=types.GoogleSearch()
-                )
-            ]
-        )
-    )
+    response_text = None
 
     try:
+        response_text = generate_with_gemini(prompt)
+        parsed_json = json.loads(response_text)
+    except Exception as e:
+        print("Gemini failed, falling back to Groq")
+        print("Error:", e)
 
-        parsed_json = json.loads(response.text)
+        try:
+            response_text = generate_with_groq(prompt)
+            parsed_json = json.loads(response_text)
+        except Exception as groq_error:
+            print("Groq also failed")
+            print("Error:", groq_error)
+            if response_text:
+                print(response_text)
+            return None
+
+    try:
 
         for article in parsed_json.get("articles", []):
 
             if article.get("isTrue"):
 
                 file_name = build_file_name(article.get("title", "news-update"))
+                article["file_name"] = file_name
                 save_article(file_name, article)        
 
        
@@ -121,13 +166,15 @@ def verify_news(
 
         print("Failed to parse/save JSON")
         print("Error:", e)
-        print(response.text)
+        print(response_text)
 
         return None
     
 
 def save_article(file_name, article, output_dir=OUTPUT_DIR):
     os.makedirs(output_dir, exist_ok=True)
+    article_to_save = dict(article)
+    article_to_save.setdefault("file_name", file_name)
 
     with open(
         os.path.join(output_dir, f"{file_name}.json"),
@@ -136,7 +183,7 @@ def save_article(file_name, article, output_dir=OUTPUT_DIR):
     ) as f:
 
         json.dump(
-            article,
+            article_to_save,
             f,
             ensure_ascii=False,
             indent=2

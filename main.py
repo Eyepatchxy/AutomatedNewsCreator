@@ -12,12 +12,14 @@ from tasks.filename_utils import build_file_name
 from tasks.thumbnail_generator import generate_thumbnail
 from tasks.timeline_parser import build_timeline
 from tasks.backimage_generator import generate_backimages
-from tasks.news_extractor import get_news
 from tasks.script_generator import generate_script
 from tasks.video_generator import generate_video
-from tasks.yt_posting import DEFAULT_PRIVACY_STATUS, publish_to_youtube
-from tasks.paths import GENERATED_ARTICLES_DIR
-from tasks.ExtractionTools.news_verifier import save_article
+from tasks.yt_posting import (
+    DEFAULT_PRIVACY_STATUS,
+    publish_to_youtube,
+    save_generated_video_record,
+)
+from tasks.ExtractionTools.news_verifier import verify_news
 
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -30,20 +32,39 @@ def build_headline_text(article):
     return "Breaking News"
 
 
+def get_verified_article():
+    verified_data = verify_news()
+    if not verified_data:
+        return None
+
+    for article in verified_data.get("articles", []):
+        if article.get("isTrue"):
+            return article
+
+    return None
+
+
 def run_pipeline(upload=False, privacy=DEFAULT_PRIVACY_STATUS, dry_run_upload=False):
-    article, _ = get_news(previous_topics=[])
-    file_name = build_file_name(article.get("title", "news-update"))
-    save_article(file_name, article, output_dir=GENERATED_ARTICLES_DIR)
+    article = get_verified_article()
+    if not article:
+        raise RuntimeError("No verified article found in processed news.")
+
+    file_name = article.get("file_name")
+    if not file_name:
+        file_name = build_file_name(article.get("title", "news-update"))
 
     article_details = article.get("details", "")
     script = generate_script(file_name, article_details)
-    chunks = generate_chunks(file_name, script)
     thumbnail_file = generate_thumbnail(file_name)
     audio_file = generate_audio(file_name, script)
 
     audio = AudioFileClip(str(audio_file))
-    duration = math.ceil(audio.duration)
+    try:
+        duration = math.ceil(audio.duration)
+    finally:
+        audio.close()
 
+    chunks = generate_chunks(file_name, script, duration=duration)
     timeline = build_timeline(file_name, chunks, duration)
     backimages = generate_backimages(file_name, timeline, duration)
     headline=build_headline_text(article)
@@ -54,6 +75,7 @@ def run_pipeline(upload=False, privacy=DEFAULT_PRIVACY_STATUS, dry_run_upload=Fa
         audio_file,
         headline,
     )
+    save_generated_video_record(file_name, privacy_status=privacy)
 
     print("Pipeline complete.")
     print(f"Filename: {file_name}")

@@ -34,7 +34,7 @@ def topicwise_news_extractor(title, description):
             {{
             "title": "...",
             "title_hi": "...",
-            "details": "...",
+            "details": "A factual verified summary with enough concrete context for a 75-90 second Hindi news script. Include only verified facts, key people/organizations, location, what happened, and current status. Do not add speculation.",
             "type": "politics/tech/business/global",
             "hook": "...",
             "source": "...",
@@ -72,6 +72,7 @@ def topicwise_news_extractor(title, description):
             if article.get("isTrue"):
 
                 file_name = build_file_name(article.get("title", "news-update"))
+                article["file_name"] = file_name
                 save_article(file_name, article)        
 
        

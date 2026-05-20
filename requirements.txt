@@ -14,6 +14,7 @@ selenium
 google-api-python-client
 google-auth-oauthlib
 google-auth-httplib2
+google-genai
 
 # UI
 gradio

@@ -1,11 +1,10 @@
 import json
 import os
 import time
-from pathlib import Path
 
 import requests
 
-from tasks.paths import GENERATED_THUMBNAILS_DIR
+from tasks.paths import GENERATED_ARTICLES_DIR, GENERATED_THUMBNAILS_DIR
 
 
 XAI_IMAGE_URL = "https://api.x.ai/v1/images/generations"
@@ -22,7 +21,7 @@ def generate_thumbnail(
     image_format="png",
     max_retries=MAX_RETRIES,
 ):
-    article_path = Path(f"Articles/{file_name}.json")
+    article_path = GENERATED_ARTICLES_DIR / f"{file_name}.json"
 
     if not article_path.exists():
         raise FileNotFoundError(f"Article file not found: {article_path}")
@@ -30,7 +29,7 @@ def generate_thumbnail(
     with open(article_path, "r", encoding="utf-8") as article:
         article_data = json.load(article)
 
-    news_type = article_data.get("type", "general")
+    news_type = article_data.get("type") or "general"
     title = article_data.get("title", "").strip()
 
     keywords = article_data.get("keywords", [])

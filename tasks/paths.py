@@ -1,15 +1,17 @@
 from pathlib import Path
 
-DATA_DIR = Path("Data")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+DATA_DIR = PROJECT_ROOT / "Data"
 RAW_NEWS_POOL_FILE = DATA_DIR / "raw_news_pool.json"
 PROCESSED_NEWS_FILE = DATA_DIR / "processed_news.json"
-PENDING_ARTICLES_DIR = DATA_DIR / "pending_articles"
 
 
-OAUTH_DIR = Path("oAuthSecrets")
-OAUTH_TOKEN_FILE = OAUTH_DIR / "youtube_token.json"
+OAUTH_DIR = PROJECT_ROOT / "oAuthSecrets"
+TOKEN_FILE = OAUTH_DIR / "youtube_token.json"
+CLIENT_SECRET_FILE = OAUTH_DIR / "client_secret.json"
 
-GENERATED_DIR = Path("Generated")
+GENERATED_DIR = PROJECT_ROOT / "Generated"
 GENERATED_ARTICLES_DIR = GENERATED_DIR / "Articles"
 GENERATED_BACKIMAGES_DIR = GENERATED_DIR / "Backimages"
 GENERATED_AUDIOS_DIR = GENERATED_DIR / "Audios"
@@ -18,4 +20,4 @@ GENERATED_SCRIPTS_DIR = GENERATED_DIR / "Scripts"
 GENERATED_THUMBNAILS_DIR = GENERATED_DIR / "Thumbnails"
 GENERATED_TIMELINES_DIR = GENERATED_DIR / "Timelines"
 GENERATED_VIDEOS_DIR = GENERATED_DIR / "Videos"
-UPLOADED_VIDEOS_DIR = Path("UploadedVideos")
+UPLOADED_VIDEOS_DIR = PROJECT_ROOT / "UploadedVideos"

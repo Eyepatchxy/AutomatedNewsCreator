@@ -38,7 +38,10 @@ Constraints:
 - Use simple vocabulary suitable for news narration
 - Avoid English words unless they are widely used in Hindi (e.g., "deadline", "ceasefire")
 - Do add punctation, conjunctions, and transition words to make the script feel natural and engaging
-- Keep the script between 250 and 1000 words (approx. 2-8 minutes)
+- Target a 90-second narrated video.
+- Keep the script around 220 to 260 Hindi words.
+- Use 8 to 11 short paragraphs so the narration has natural pauses.
+- If the article has limited verified facts, still aim for at least 75 seconds, but do not add unverified facts or filler.
 - Do not exaggerate or add unverified information
 - Only include background or context if it is widely known and relevant
 - Do not fabricate causes, impacts, or details

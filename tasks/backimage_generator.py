@@ -2,11 +2,10 @@ import json
 import math
 import os
 import time
-from pathlib import Path
 
 import requests
 
-from tasks.paths import GENERATED_BACKIMAGES_DIR
+from tasks.paths import GENERATED_ARTICLES_DIR, GENERATED_BACKIMAGES_DIR
 
 
 XAI_IMAGE_URL = "https://api.x.ai/v1/images/generations"
@@ -54,7 +53,7 @@ def generate_backimages(
     image_format="png",
     max_retries=MAX_RETRIES,
 ):
-    article_path = Path(f"Articles/{file_name}.json")
+    article_path = GENERATED_ARTICLES_DIR / f"{file_name}.json"
 
     if not article_path.exists():
         raise FileNotFoundError(
@@ -65,7 +64,7 @@ def generate_backimages(
         article_data = json.load(article_file)
 
     title = article_data.get("title", "").strip()
-    news_type = article_data.get("type", "general").strip()
+    news_type = (article_data.get("type") or "general").strip()
 
     keywords = article_data.get("keywords", [])
     keyword = keywords[0] if keywords else ""

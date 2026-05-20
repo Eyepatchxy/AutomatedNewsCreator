@@ -124,6 +124,7 @@ def semantic_deduplicate(
         the SAME news event/story.
 
         Rules:
+        - The response should only be a JSON array of clusters, no explanations or extra text.
         - First compare every input video against already_posted_articles.
         - If an input video reports the same news event/story as an already posted article, exclude it completely.
         - Same posted story = same event, same announcement, same update, or no significant new development.
@@ -132,9 +133,12 @@ def semantic_deduplicate(
         - Different wording = same cluster
         - Different opinions on same event = same cluster
         - Completely different events = separate clusters
-        - Assign priority to each cluster based on your judgement of the news imporatance and existing priority of news it contains.
-        - Response json should be in ascending order of priority (most important first).
-        - No 2 clusters should have the same priority number. If multiple clusters have same priority, increase priority number of all but one of them to ensure unique priority values.    
+        - Assign priority by ranking the final clusters from most important to least important.
+        - Priority must be a compact sequence starting at 1 with no gaps.
+        - If there are N clusters, priorities must be exactly 1 through N.
+        - Response json should be sorted by priority in ascending order.
+        - Use the input video's existing priority only as a tie breaker, not as the final priority value.
+        - No 2 clusters should have the same priority number.
 
         Return ONLY valid JSON.
 
@@ -149,7 +153,7 @@ def semantic_deduplicate(
         {{
             "cluster_topic": "short topic",
             "news_description": "short description of the news event",
-            "priority": 1-10 (1 = highest priority),
+            "priority": 1,
             "video_indexes": [0, 3]
         }}
         ]
@@ -167,6 +171,9 @@ def semantic_deduplicate(
     )
 
     content = response.choices[0].message.content
+
+    print("Deduplication response:")
+    print(content)
 
     deduplicated = json.loads(content)
 
