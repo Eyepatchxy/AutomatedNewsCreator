@@ -2,7 +2,7 @@ import os
 import time
 from google import genai
 from groq import Groq
-from tasks.paths import GENERATED_SCRIPTS_DIR
+from paths import GENERATED_SCRIPTS_DIR
 
 genai_api_key = os.getenv("GEMINI_API_KEY")
 groq_api_key = os.getenv("GROQ_API_KEY")

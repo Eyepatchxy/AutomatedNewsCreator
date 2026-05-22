@@ -5,7 +5,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "Data"
 RAW_NEWS_POOL_FILE = DATA_DIR / "raw_news_pool.json"
 PROCESSED_NEWS_FILE = DATA_DIR / "processed_news.json"
-
+CHANNELS_FILE = DATA_DIR / "channels.json"
 
 OAUTH_DIR = PROJECT_ROOT / "oAuthSecrets"
 TOKEN_FILE = OAUTH_DIR / "youtube_token.json"

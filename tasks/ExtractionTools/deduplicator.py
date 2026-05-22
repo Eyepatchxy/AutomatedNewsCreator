@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 from groq import Groq
-from tasks.paths import (
+from paths import (
     GENERATED_ARTICLES_DIR,
     RAW_NEWS_POOL_FILE,
     PROCESSED_NEWS_FILE,
@@ -80,6 +80,21 @@ def load_posted_articles(articles_dir=GENERATED_ARTICLES_DIR, limit=30):
     return posted_articles
 
 
+def load_json_list(path):
+    path = Path(path)
+
+    if not path.exists():
+        return []
+
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError:
+        return []
+
+    return data if isinstance(data, list) else []
+
+
 def semantic_deduplicate(
     input_file = RAW_NEWS_POOL_FILE,
     output_file = PROCESSED_NEWS_FILE,
@@ -87,8 +102,8 @@ def semantic_deduplicate(
     model=GROQ_MODEL
 ):
    
-    with open(input_file, "r", encoding="utf-8") as f:
-        videos = json.load(f)
+    videos = load_json_list(input_file)
+    existing_processed_news = load_json_list(output_file)
 
     posted_articles = load_posted_articles(posted_articles_dir)
 
@@ -113,6 +128,28 @@ def semantic_deduplicate(
             "priority": video.get("priority", 999)
         })
 
+    simplified_existing_news = []
+
+    for idx, item in enumerate(existing_processed_news):
+
+        simplified_existing_news.append({
+            "index": idx,
+            "cluster_topic": (
+                item.get("cluster_topic")
+                or item.get("title")
+                or item.get("headline")
+                or item.get("topic")
+                or ""
+            ),
+            "news_description": (
+                item.get("news_description")
+                or item.get("description")
+                or item.get("summary")
+                or ""
+            ),
+            "priority": item.get("priority", 999),
+        })
+
     # -----------------------------
     # Prompt
     # -----------------------------
@@ -120,13 +157,16 @@ def semantic_deduplicate(
     prompt = f"""
         You are a news deduplication system.
 
-        Group videos that report
+        Group input items that report
         the SAME news event/story.
 
         Rules:
         - The response should only be a JSON array of clusters, no explanations or extra text.
-        - First compare every input video against already_posted_articles.
-        - If an input video reports the same news event/story as an already posted article, exclude it completely.
+        - The raw input videos are newly fetched videos.
+        - The existing processed news are stories already waiting in processed_news.json.
+        - Deduplicate raw input videos and existing processed news together.
+        - First compare every input item against already_posted_articles.
+        - If an input item reports the same news event/story as an already posted article, exclude it completely.
         - Same posted story = same event, same announcement, same update, or no significant new development.
         - Only keep a posted-related story if the input clearly contains a significant new development after the posted article.
         - Same event = same cluster
@@ -145,16 +185,19 @@ def semantic_deduplicate(
         Already posted articles:
         {json.dumps(posted_articles, indent=2, ensure_ascii=False)}
 
+        Existing processed news:
+        {json.dumps(simplified_existing_news, indent=2, ensure_ascii=False)}
+
         Raw input videos:
         {json.dumps(simplified_videos, indent=2)}
 
         Output format:
         [
         {{
-            "cluster_topic": "short topic",
-            "news_description": "short description of the news event",
+            "topic": "short topic",
+            "description": "short description of the news event",
             "priority": 1,
-            "video_indexes": [0, 3]
+            "video_indexes": [0, 3] 
         }}
         ]
     """

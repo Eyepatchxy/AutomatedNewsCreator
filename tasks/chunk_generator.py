@@ -1,7 +1,7 @@
 import json
 import os
 from groq import Groq
-from tasks.paths import GENERATED_CHUNKS_DIR
+from paths import GENERATED_CHUNKS_DIR
 
 api_key = os.getenv("GROQ_API_KEY")
 

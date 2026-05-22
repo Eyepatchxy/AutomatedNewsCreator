@@ -4,7 +4,7 @@ from pathlib import Path
 
 import requests
 
-from tasks.paths import GENERATED_AUDIOS_DIR
+from paths import GENERATED_AUDIOS_DIR
 
 
 XAI_TTS_URL = "https://api.x.ai/v1/tts"

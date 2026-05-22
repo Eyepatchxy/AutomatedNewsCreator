@@ -32,8 +32,8 @@ def build_headline_text(article):
     return "Breaking News"
 
 
-def get_verified_article():
-    verified_data = verify_news()
+def get_verified_article(selected_news=None):
+    verified_data = verify_news(selected_news=selected_news)
     if not verified_data:
         return None
 
@@ -44,8 +44,13 @@ def get_verified_article():
     return None
 
 
-def run_pipeline(upload=False, privacy=DEFAULT_PRIVACY_STATUS, dry_run_upload=False):
-    article = get_verified_article()
+def run_pipeline(
+    upload=False,
+    privacy=DEFAULT_PRIVACY_STATUS,
+    dry_run_upload=False,
+    selected_news=None,
+):
+    article = get_verified_article(selected_news=selected_news)
     if not article:
         raise RuntimeError("No verified article found in processed news.")
 
