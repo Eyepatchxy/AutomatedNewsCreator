@@ -1,6 +1,6 @@
 import json
 import os
-from tasks.paths import GENERATED_TIMELINES_DIR
+from paths import GENERATED_TIMELINES_DIR
 
 def build_timeline(file_name, chunks, duration):
     timeline = []

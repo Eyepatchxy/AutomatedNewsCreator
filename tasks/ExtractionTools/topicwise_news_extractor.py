@@ -3,7 +3,7 @@ import os
 from google import genai
 from google.genai import types
 from tasks.filename_utils import build_file_name
-from tasks.ExtractionTools.news_verifier import save_article
+from tasks.news_verifier import save_article
 
 
 client = genai.Client(

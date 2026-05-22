@@ -5,7 +5,7 @@ import time
 
 import requests
 
-from tasks.paths import GENERATED_ARTICLES_DIR, GENERATED_BACKIMAGES_DIR
+from paths import GENERATED_ARTICLES_DIR, GENERATED_BACKIMAGES_DIR
 
 
 XAI_IMAGE_URL = "https://api.x.ai/v1/images/generations"

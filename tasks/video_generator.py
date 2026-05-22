@@ -11,7 +11,7 @@ import os
 import json
 import math
 
-from tasks.paths import GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR
+from paths import GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR
 from tasks.timeline_parser import build_timeline
 
 

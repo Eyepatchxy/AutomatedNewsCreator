@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from tasks.paths import (
+from paths import (
     GENERATED_ARTICLES_DIR,
     GENERATED_THUMBNAILS_DIR,
     GENERATED_VIDEOS_DIR,
@@ -75,6 +75,22 @@ def load_article(file_name: str) -> dict:
 
     with article_path.open("r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def save_article(file_name: str, article: dict) -> None:
+    ARTICLE_DIR.mkdir(parents=True, exist_ok=True)
+    article_path = ARTICLE_DIR / f"{file_name}.json"
+    with article_path.open("w", encoding="utf-8") as f:
+        json.dump(article, f, ensure_ascii=False, indent=2)
+
+
+def mark_article_uploaded(file_name: str, uploaded: bool = True) -> None:
+    article = load_article(file_name)
+    if not article:
+        return
+
+    article["uploaded"] = uploaded
+    save_article(file_name, article)
 
 
 def find_video(file_name: str) -> Path:
@@ -322,6 +338,7 @@ def publish_to_youtube(
             record["thumbnail_error"] = str(exc)
 
     save_upload_record(file_name, record)
+    mark_article_uploaded(file_name, True)
     return record
 
 

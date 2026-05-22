@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
-from tasks.paths import TOKEN_FILE, RAW_NEWS_POOL_FILE
+from paths import TOKEN_FILE, RAW_NEWS_POOL_FILE
 from tasks.ExtractionTools.deduplicator import normalize_text
 
 from google.oauth2.credentials import Credentials
@@ -57,9 +57,10 @@ def get_channel_id_from_handle(
 
 def get_recent_videos(
     youtube,
-    channels = channels,
+    channels=channels,
     days=7,
-    output_file=RAW_NEWS_POOL_FILE
+    output_file=RAW_NEWS_POOL_FILE,
+    selected_channel_ids=None,
 ):
     """
     Fetch recent videos from channels
@@ -71,18 +72,24 @@ def get_recent_videos(
         - timedelta(days=days)
     ).isoformat()
 
+    selected_channel_ids = set(selected_channel_ids or [])
+    selected_channels = [
+        channel
+        for channel in channels
+        if not selected_channel_ids
+        or (channel.get("id") or channel.get("channel_id")) in selected_channel_ids
+    ]
+
     all_videos = []
 
-    for channel in channels:
+    for channel in selected_channels:
 
         print(f"Fetching: {channel['name']}")
 
-        channel_id = get_channel_id_from_handle(
-            youtube,
-            channel["handle"]
-        )
+        channel_id = channel.get("id") or channel.get("channel_id")
 
         if not channel_id:
+            print(f"Channel ID missing: {channel['name']}")
             continue
 
         response = youtube.search().list(
