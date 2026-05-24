@@ -6,6 +6,7 @@ __pycache__/
 py311par/
 
 # Created files
+Data/
 Generated/
 UploadedVideos/
 Backgrounds/

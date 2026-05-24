@@ -1,14 +1,11 @@
 import json
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
-from paths import TOKEN_FILE, RAW_NEWS_POOL_FILE
+from paths import TOKEN_FILE, RAW_NEWS_POOL_FILE, CHANNELS_FILE
 from tasks.ExtractionTools.deduplicator import normalize_text
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-
-CHANNELS_FILE = Path(__file__).with_name("channels.json")
-channels = json.load(open(CHANNELS_FILE, encoding="utf-8"))["channels"]
 
 MAX_RESULTS_PER_CHANNEL = 5
 
@@ -57,27 +54,28 @@ def get_channel_id_from_handle(
 
 def get_recent_videos(
     youtube,
-    channels=channels,
     days=7,
     output_file=RAW_NEWS_POOL_FILE,
-    selected_channel_ids=None,
+    selected_channel_priorities=None,
+    max_results_per_channel=MAX_RESULTS_PER_CHANNEL,
 ):
     """
     Fetch recent videos from channels
     and save to JSON
     """
 
+    channels = json.load(open(CHANNELS_FILE, encoding="utf-8"))["channels"]
+
     published_after = (
         datetime.now(timezone.utc)
         - timedelta(days=days)
     ).isoformat()
 
-    selected_channel_ids = set(selected_channel_ids or [])
+    selected_priorities = set(selected_channel_priorities or [])
     selected_channels = [
         channel
         for channel in channels
-        if not selected_channel_ids
-        or (channel.get("id") or channel.get("channel_id")) in selected_channel_ids
+        if not selected_priorities or channel["priority"] in selected_priorities
     ]
 
     all_videos = []
@@ -86,7 +84,7 @@ def get_recent_videos(
 
         print(f"Fetching: {channel['name']}")
 
-        channel_id = channel.get("id") or channel.get("channel_id")
+        channel_id = channel.get("id")
 
         if not channel_id:
             print(f"Channel ID missing: {channel['name']}")
@@ -98,7 +96,7 @@ def get_recent_videos(
             type="video",
             order="date",
             publishedAfter=published_after,
-            maxResults=MAX_RESULTS_PER_CHANNEL
+            maxResults=max_results_per_channel
         ).execute()
 
         for item in response.get("items", []):

@@ -3,15 +3,19 @@ import unicodedata
 import json
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 from groq import Groq
 from paths import (
+    PROJECT_ROOT,
     GENERATED_ARTICLES_DIR,
     RAW_NEWS_POOL_FILE,
     PROCESSED_NEWS_FILE,
 )
 
+load_dotenv(PROJECT_ROOT / ".env")
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = os.getenv("NEWS_DEDUPLICATION_GROQ_MODEL", "llama-3.3-70b-versatile")
 
 def normalize_text(text):
     """

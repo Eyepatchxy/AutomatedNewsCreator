@@ -10,14 +10,16 @@ from moviepy import (
 import os
 import json
 import math
+from dotenv import load_dotenv
 
-from paths import GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR
+from paths import PROJECT_ROOT, GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR
 from tasks.timeline_parser import build_timeline
 
+load_dotenv(PROJECT_ROOT / ".env")
 
 DURATION_PER_IMAGE = 30
 
-FONT_PATH = "/home/eyepatchxy/.local/share/noto-sans-devanagari/NotoSansDevanagari-Bold.ttf"
+FONT_PATH = os.getenv("VIDEO_TEXT_FONT", "Noto Sans Devanagari")
 
 
 def create_background(file_name, duration):
