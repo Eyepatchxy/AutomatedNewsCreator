@@ -1,15 +1,18 @@
 import json
 import os
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from groq import Groq
-from paths import PROCESSED_NEWS_FILE, GENERATED_ARTICLES_DIR
+from paths import PROJECT_ROOT, PROCESSED_NEWS_FILE, GENERATED_ARTICLES_DIR
 from tasks.filename_utils import build_file_name
+
+load_dotenv(PROJECT_ROOT / ".env")
 
 INPUT_FILE = PROCESSED_NEWS_FILE
 OUTPUT_DIR = GENERATED_ARTICLES_DIR 
-GEMINI_MODEL = "gemini-1.5-flash"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GEMINI_MODEL = os.getenv("NEWS_VERIFICATION_GEMINI_MODEL", "gemini-1.5-flash")
+GROQ_MODEL = os.getenv("NEWS_VERIFICATION_GROQ_MODEL", "llama-3.3-70b-versatile")
 
 
 client = genai.Client(
@@ -18,42 +21,6 @@ client = genai.Client(
 groq_client = Groq(
     api_key=os.getenv("GROQ_API_KEY")
 )
-
-
-def get_news_title(news_item):
-    if isinstance(news_item, dict):
-        return (
-            news_item.get("title")
-            or news_item.get("cluster_topic")
-            or news_item.get("headline")
-            or news_item.get("topic")
-            or ""
-        )
-
-    return (
-        getattr(news_item, "title", "")
-        or getattr(news_item, "cluster_topic", "")
-        or getattr(news_item, "headline", "")
-        or getattr(news_item, "topic", "")
-        or ""
-    )
-
-
-def get_news_description(news_item):
-    if isinstance(news_item, dict):
-        return (
-            news_item.get("description")
-            or news_item.get("news_description")
-            or news_item.get("summary")
-            or ""
-        )
-
-    return (
-        getattr(news_item, "description", "")
-        or getattr(news_item, "news_description", "")
-        or getattr(news_item, "summary", "")
-        or ""
-    )
 
 
 def generate_with_gemini(prompt):
@@ -92,37 +59,10 @@ def generate_with_groq(prompt):
 
 
 def verify_news(
-    input_file=INPUT_FILE,
-    selected_news=None,
+    title = "",
+    description = "",
 ):
-    with open(input_file, "r", encoding="utf-8") as f:
-        news_items = json.load(f)
-
-    if not news_items and not selected_news:
-        print("No news items found")
-        return None
-
-    if selected_news:
-        selected_title = get_news_title(selected_news)
-        top_item = next(
-            (
-                item
-                for item in news_items
-                if get_news_title(item) == selected_title
-            ),
-            selected_news,
-        )
-    else:
-        # Get item with highest priority
-        # (lowest priority number)
-        top_item = min(
-            news_items,
-            key=lambda x: x.get("priority", 9999)
-        )
-
-    title = get_news_title(top_item)
-    description = get_news_description(top_item)
-
+    
     prompt = f"""
         You are a professional news verification system.
 
@@ -133,6 +73,8 @@ def verify_news(
         4. If uncertain, mention uncertainty clearly.
         5. Return STRICT JSON ONLY.
         6. "isTrue" should be strictly boolean, not string.
+        7. If title and description are insufficient for verification, use the Google Search tool to find more information. Only include facts that can be verified with high confidence.
+        8. If title and description are blank, empty or cannot be interpreted, you may search the web for recent news and verify one of them, but only if you can find a well-verified news story with enough information to create a detailed summary. The type priority should be: global > politics > tech etc.
 
         News Title: {title}
 
@@ -140,7 +82,7 @@ def verify_news(
 
         Output format (STRICT JSON):
         {{
-        "articles": [
+        "article": 
             {{
             "title": "...",
             "title_hi": "...",
@@ -151,13 +93,11 @@ def verify_news(
             "keywords": ["...", "..."],
             "isTrue": true
             }}
-        ]
         }}
     """
 
     if not title:
-        print("No priority 1 news found")
-        return None
+        print("[INFO] No title passed into verify_news; attempting quick generation.")
 
     response_text = None
 
@@ -182,37 +122,26 @@ def verify_news(
 
         saved_article = False
 
-        for article in parsed_json.get("articles", []):
-
-            if article.get("isTrue"):
-
-                file_name = build_file_name(article.get("title", "news-update"))
-                article["file_name"] = file_name
-                article.setdefault("uploaded", False)
-                save_article(file_name, article)
-                saved_article = True
-
+        article = parsed_json.get("article")
+        if article and article.get("isTrue"):
+            
+            file_name = build_file_name(article.get("title", "news-update"))
+            article["file_name"] = file_name
+            article.setdefault("uploaded", False)
+            save_article(file_name, article)
+            saved_article = True
+        
         if saved_article:
-            updated_news_items = [
-                item
-                for item in news_items
-                if get_news_title(item) != title
-            ]
+            print(f"[INFO] Article verified and saved: {article['title']}")
 
-            with open(input_file, "w", encoding="utf-8") as f:
-                json.dump(
-                    updated_news_items,
-                    f,
-                    indent=4,
-                    ensure_ascii=False
-                )
+            return file_name
+        else:
+            print(f"[INFO] Article did not pass verification: {article['title'] if article else 'No article data'}")
 
-       
-        return parsed_json
 
     except Exception as e:
 
-        print("Failed to parse/save JSON")
+        print("[INFO] Failed to Generate Article")
         print("Error:", e)
         print(response_text)
 
@@ -224,6 +153,11 @@ def save_article(file_name, article, output_dir=OUTPUT_DIR):
     article_to_save = dict(article)
     article_to_save.setdefault("file_name", file_name)
     article_to_save.setdefault("uploaded", False)
+    article_to_save["keywords"] = [
+        f"#{str(keyword).strip().lstrip('#')}"
+        for keyword in article_to_save.get("keywords", [])
+        if str(keyword).strip()
+    ]
 
     with open(
         os.path.join(output_dir, f"{file_name}.json"),

@@ -1,8 +1,11 @@
 import os
 import time
+from dotenv import load_dotenv
 from google import genai
 from groq import Groq
-from paths import GENERATED_SCRIPTS_DIR
+from paths import PROJECT_ROOT, GENERATED_SCRIPTS_DIR
+
+load_dotenv(PROJECT_ROOT / ".env")
 
 genai_api_key = os.getenv("GEMINI_API_KEY")
 groq_api_key = os.getenv("GROQ_API_KEY")
@@ -10,8 +13,8 @@ groq_api_key = os.getenv("GROQ_API_KEY")
 gemini_client = genai.Client(api_key=genai_api_key) if genai_api_key else None
 groq_client = Groq(api_key=groq_api_key)
 
-GEMINI_MODEL = "gemini-2.5-flash"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GEMINI_MODEL = os.getenv("SCRIPT_GENERATION_GEMINI_MODEL", "gemini-2.5-flash")
+GROQ_MODEL = os.getenv("SCRIPT_GENERATION_GROQ_MODEL", "llama-3.3-70b-versatile")
 
 instructions = """You are a script writer for a YouTube hindi news channel.
 Your task is to convert the given news article into a clear and engaging hindi news script.
@@ -31,12 +34,12 @@ STRICT RULES:
 - Return the script as plain text, do add spaces and new lines for pauses, and necessary punctuation, but do NOT add any scene directions or captions.
 - The script should be in natural spoken Hindi, not formal or literary Hindi.
 - The script should be in devnagri script, not romanized Hindi.
-- Use English script only for words that are widely used in Hindi (e.g., "Subscribe", "Like")
+- Do not use Latin/English letters in the script. Write borrowed English-origin words in Devanagari, e.g. "सब्सक्राइब", "लाइक", "डेडलाइन", "सीज़फायर".
 
 Constraints:
 - Write the script in natural spoken Hindi (not formal or literary Hindi)
 - Use simple vocabulary suitable for news narration
-- Avoid English words unless they are widely used in Hindi (e.g., "deadline", "ceasefire")
+- Avoid English words unless they are widely used in Hindi, and even then write them in Devanagari script.
 - Do add punctation, conjunctions, and transition words to make the script feel natural and engaging
 - Target a 90-second narrated video.
 - Keep the script around 220 to 260 Hindi words.
@@ -87,7 +90,7 @@ Article:
 def generate_with_gemini(prompt):
 
     response = gemini_client.models.generate_content(
-        model="gemini-2.5-flash",
+        model=GEMINI_MODEL,
         contents=prompt
     )
 
@@ -97,7 +100,7 @@ def generate_with_gemini(prompt):
 def generate_with_groq(prompt):
 
     response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=GROQ_MODEL,
         messages=[
             {
                 "role": "user",

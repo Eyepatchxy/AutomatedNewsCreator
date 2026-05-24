@@ -1,9 +1,16 @@
 import json
 import os
+from dotenv import load_dotenv
 from groq import Groq
-from paths import GENERATED_CHUNKS_DIR
+from paths import PROJECT_ROOT, GENERATED_CHUNKS_DIR
+
+load_dotenv(PROJECT_ROOT / ".env")
 
 api_key = os.getenv("GROQ_API_KEY")
+CHUNK_GENERATION_GROQ_MODEL = os.getenv(
+    "CHUNK_GENERATION_GROQ_MODEL",
+    "llama-3.3-70b-versatile",
+)
 
 client = Groq(api_key=api_key)
 
@@ -53,7 +60,7 @@ def generate_chunks(file_name, script, duration=None):
         )
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=CHUNK_GENERATION_GROQ_MODEL,
         messages=[
             {"role": "user", "content": prompt}
         ]

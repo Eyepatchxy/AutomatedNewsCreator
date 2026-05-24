@@ -1,1 +1,34 @@
-[]
+[
+    {
+        "topic": "Iran Nuclear Deal",
+        "description": "Iran has reportedly shown willingness to give up its stockpile of highly enriched uranium as part of a deal",
+        "priority": 1,
+        "video_indexes": [
+            1
+        ]
+    },
+    {
+        "topic": "UPSC Prelims 2026 Exam",
+        "description": "UPSC civil services exam prelims 2026 have been conducted and after the exam many candidates were seen in panic",
+        "priority": 2,
+        "video_indexes": [
+            2
+        ]
+    },
+    {
+        "topic": "Uttar Pradesh Power Crisis",
+        "description": "The escalating power crisis across Uttar Pradesh as blistering 45 degree temperatures push the state's",
+        "priority": 3,
+        "video_indexes": [
+            3
+        ]
+    },
+    {
+        "topic": "Thailand Visa Free Entry",
+        "description": "Thailand is tightening its visa free entry rules for Indian tourists",
+        "priority": 4,
+        "video_indexes": [
+            4
+        ]
+    }
+]

@@ -1,10 +1,15 @@
 import json
 import os
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from paths import PROJECT_ROOT
 from tasks.filename_utils import build_file_name
 from tasks.news_verifier import save_article
 
+load_dotenv(PROJECT_ROOT / ".env")
+
+TOPICWISE_NEWS_GEMINI_MODEL = os.getenv("TOPICWISE_NEWS_GEMINI_MODEL", "gemini-2.5-pro")
 
 client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
@@ -50,7 +55,7 @@ def topicwise_news_extractor(title, description):
         return None
 
     response = client.models.generate_content(
-        model="gemini-2.5-pro",
+        model=TOPICWISE_NEWS_GEMINI_MODEL,
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=0.2,

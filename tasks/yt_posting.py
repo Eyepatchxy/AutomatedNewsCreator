@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -117,7 +116,9 @@ def unique_items(items: list[str]) -> list[str]:
     seen = set()
     result = []
     for item in items:
-        cleaned = " ".join(str(item).split())
+        cleaned = " ".join(str(item).split()).lstrip("#")
+        if cleaned:
+            cleaned = f"#{cleaned}"
         key = cleaned.lower()
         if cleaned and key not in seen:
             result.append(cleaned)
@@ -342,33 +343,13 @@ def publish_to_youtube(
     return record
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Upload a generated video to YouTube.")
-    parser.add_argument(
-        "file_name",
-        help="Base file name, for example 2026-05-10_18-24-30_ai-protein-folding-breakthrough",
+def upload_generated_video(
+    file_name: str,
+    privacy_status: str = DEFAULT_PRIVACY_STATUS,
+    dry_run: bool = False,
+) -> dict:
+    return publish_to_youtube(
+        file_name,
+        privacy_status=privacy_status,
+        dry_run=dry_run,
     )
-    parser.add_argument(
-        "--privacy",
-        choices=["public", "unlisted", "private"],
-        default=DEFAULT_PRIVACY_STATUS,
-        help="YouTube privacy status. Defaults to public.",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Build metadata and save a record without uploading.",
-    )
-    args = parser.parse_args()
-
-    record = publish_to_youtube(
-        args.file_name,
-        privacy_status=args.privacy,
-        dry_run=args.dry_run,
-    )
-
-    print(json.dumps(record, ensure_ascii=False, indent=2))
-
-
-if __name__ == "__main__":
-    main()

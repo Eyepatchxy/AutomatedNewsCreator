@@ -4,13 +4,15 @@ import os
 import time
 
 import requests
+from dotenv import load_dotenv
 
-from paths import GENERATED_ARTICLES_DIR, GENERATED_BACKIMAGES_DIR
+from paths import PROJECT_ROOT, GENERATED_ARTICLES_DIR, GENERATED_BACKIMAGES_DIR
 
+load_dotenv(PROJECT_ROOT / ".env")
 
 XAI_IMAGE_URL = "https://api.x.ai/v1/images/generations"
 
-DEFAULT_MODEL = "grok-imagine-image"
+DEFAULT_MODEL = os.getenv("BACKIMAGE_IMAGE_MODEL", "grok-imagine-image")
 DEFAULT_SIZE = "1792x1024"
 
 MAX_RETRIES = 3

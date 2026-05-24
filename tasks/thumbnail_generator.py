@@ -2,11 +2,13 @@ import json
 import os
 import time
 import requests
-from paths import GENERATED_THUMBNAILS_DIR, GENERATED_ARTICLES_DIR
+from dotenv import load_dotenv
+from paths import PROJECT_ROOT, GENERATED_THUMBNAILS_DIR, GENERATED_ARTICLES_DIR
 
+load_dotenv(PROJECT_ROOT / ".env")
 
 XAI_IMAGE_URL = "https://api.x.ai/v1/images/generations"
-DEFAULT_MODEL = "grok-imagine-image"
+DEFAULT_MODEL = os.getenv("THUMBNAIL_IMAGE_MODEL", "grok-imagine-image")
 MAX_RETRIES = 3
 DEFAULT_SIZE = "1792x1024"  # 1792×1024, 1280x720
 

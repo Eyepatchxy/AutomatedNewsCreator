@@ -1,11 +1,14 @@
-from dotenv import load_dotenv
-load_dotenv()
+import json
 
-import argparse
+from dotenv import load_dotenv
+from paths import PROJECT_ROOT
+load_dotenv(PROJECT_ROOT / ".env")
+
 import sys
 import math
 from moviepy import AudioFileClip
-
+from paths import GENERATED_ARTICLES_DIR
+from tasks.news_verifier import verify_news
 from tasks.audio_generator import generate_audio
 from tasks.chunk_generator import generate_chunks
 from tasks.filename_utils import build_file_name
@@ -19,60 +22,44 @@ from tasks.yt_posting import (
     publish_to_youtube,
     save_generated_video_record,
 )
-from tasks.ExtractionTools.news_verifier import verify_news
-
+from tasks.ExtractionTools.channelwise_news_extractor import (
+    create_youtube_client,
+    get_recent_videos,
+)
+from tasks.ExtractionTools.deduplicator import semantic_deduplicate
 
 sys.stdout.reconfigure(encoding="utf-8")
 
 
-def build_headline_text(article):
-    article_type = article.get("type")
-    if article_type:
-        return f"{article_type.strip().lower().capitalize()} News"
-    return "Breaking News"
-
-
-def get_verified_article(selected_news=None):
-    verified_data = verify_news(selected_news=selected_news)
-    if not verified_data:
-        return None
-
-    for article in verified_data.get("articles", []):
-        if article.get("isTrue"):
-            return article
-
-    return None
-
-
-def run_pipeline(
-    upload=False,
+def video_pipeline(
+    title,
+    description,
+    upload=True,
     privacy=DEFAULT_PRIVACY_STATUS,
-    dry_run_upload=False,
-    selected_news=None,
+    dry_run_upload=False
 ):
-    article = get_verified_article(selected_news=selected_news)
-    if not article:
-        raise RuntimeError("No verified article found in processed news.")
-
-    file_name = article.get("file_name")
+    file_name = verify_news(title, description)
     if not file_name:
-        file_name = build_file_name(article.get("title", "news-update"))
+        raise RuntimeError("[INFO] News verification did not produce an article.")
+
+    with open(f"{GENERATED_ARTICLES_DIR}/{file_name}.json", "r", encoding="utf-8") as f:
+        article = json.load(f)    
+    
+    if not article:
+        raise RuntimeError("[INFO] No generated article found.")
 
     article_details = article.get("details", "")
     script = generate_script(file_name, article_details)
     thumbnail_file = generate_thumbnail(file_name)
     audio_file = generate_audio(file_name, script)
-
     audio = AudioFileClip(str(audio_file))
-    try:
-        duration = math.ceil(audio.duration)
-    finally:
-        audio.close()
+    duration = math.ceil(audio.duration)
+    audio.close()
 
     chunks = generate_chunks(file_name, script, duration=duration)
     timeline = build_timeline(file_name, chunks, duration)
     backimages = generate_backimages(file_name, timeline, duration)
-    headline=build_headline_text(article)
+    headline=build_headline_text(article.get("type"))
 
     video_file = generate_video(
         file_name,
@@ -87,11 +74,11 @@ def run_pipeline(
     print(f"Audio: {audio_file}")
     print(f"Video: {video_file}")
     print(f"Thumbnail: {thumbnail_file}")
-    if upload or dry_run_upload:
+    if upload:
         upload_record = publish_to_youtube(
             file_name,
             privacy_status=privacy,
-            dry_run=dry_run_upload,
+            dry_run=dry_run_upload
         )
         if dry_run_upload:
             print(f"YouTube dry-run record saved")
@@ -101,34 +88,32 @@ def run_pipeline(
     return video_file
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Generate a Hindi news video from article to audio to final render."
+def channelwise_extraction_pipeline(
+    channel_priorities=None,
+    num_videos=5
+):
+    
+    youtube_client = create_youtube_client()
+    get_recent_videos(
+        youtube_client,
+        selected_channel_priorities=channel_priorities,
+        max_results_per_channel=num_videos,
     )
-    parser.add_argument(
-        "--upload",
-        action="store_true",
-        help="Upload the generated video to YouTube after rendering.",
-    )
-    parser.add_argument(
-        "--privacy",
-        choices=["public", "unlisted", "private"],
-        default=DEFAULT_PRIVACY_STATUS,
-        help=f"YouTube privacy status when --upload is used. Defaults to {DEFAULT_PRIVACY_STATUS}.",
-    )
-    parser.add_argument(
-        "--dry-run-upload",
-        action="store_true",
-        help="Build the YouTube upload record without uploading. Implies --upload.",
-    )
-    args = parser.parse_args()
-
-    run_pipeline(
-        upload=args.upload,
-        privacy=args.privacy,
-        dry_run_upload=args.dry_run_upload,
-    )
+    return semantic_deduplicate()
 
 
-if __name__ == "__main__":
-    main()
+def build_headline_text(type):
+    headline_map = {
+        "politics": "राजनीति न्यूज़",
+        "tech": "टेक न्यूज़",
+        "technology": "टेक न्यूज़",
+        "business": "बिज़नेस न्यूज़",
+        "global": "ग्लोबल न्यूज़",
+        "world": "विश्व न्यूज़",
+        "sports": "स्पोर्ट्स न्यूज़",
+        "entertainment": "मनोरंजन न्यूज़",
+        "general": "ताज़ा न्यूज़",
+    }
+    if type:
+        return headline_map.get(type.strip().lower(), "ताज़ा न्यूज़")
+    return "ताज़ा न्यूज़"
