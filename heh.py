@@ -1,7 +1,7 @@
 from PIL import ImageFont
 
 font = ImageFont.truetype(
-    "/home/eyepatchxy/.local/share/noto-sans-devanagari/NotoSansDevanagari-Bold.ttf",
+    "Inputs/vt.ttf",
     40
 )
 

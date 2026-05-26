@@ -12,14 +12,12 @@ import json
 import math
 from dotenv import load_dotenv
 
-from paths import PROJECT_ROOT, GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR, BACKGROUND_LAYOUT_FILE
+from paths import PROJECT_ROOT, GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR, BACKGROUND_LAYOUT_FILE, FONT_FILE
 from tasks.timeline_parser import build_timeline
 
 load_dotenv(PROJECT_ROOT / ".env")
 
 DURATION_PER_IMAGE = 30
-
-FONT_PATH = os.getenv("VIDEO_TEXT_FONT", "Noto Sans Devanagari")
 
 
 def create_background(file_name, duration):
@@ -76,21 +74,21 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
 
     timeline = build_timeline(file_name, chunks, duration)
 
-    headline = (
-        TextClip(
-            text=headline_text,
-            font_size=65,
-            font=FONT_PATH,
-            color="white",
-            method="caption",
-            size=(1800, 180),
-            stroke_color="black",
-            stroke_width=2,
-            text_align="center",
-        )
-        .with_position(("center", 10))
-        .with_duration(duration)
-    )
+    # headline = (
+    #     TextClip(
+    #         text=headline_text,
+    #         font_size=65,
+    #         font=FONT_PATH,
+    #         color="white",
+    #         method="caption",
+    #         size=(1800, 180),
+    #         stroke_color="black",
+    #         stroke_width=2,
+    #         text_align="center",
+    #     )
+    #     .with_position(("center", 10))
+    #     .with_duration(duration)
+    # )
 
     layout_overlay = (
         ImageClip(str(BACKGROUND_LAYOUT_FILE))
@@ -109,7 +107,7 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
             TextClip(
                 text=chunk["text"],
                 font_size=42,
-                font=FONT_PATH,
+                font=FONT_FILE,
                 color="black",
                 size=(1275, 120),
                 method="caption",

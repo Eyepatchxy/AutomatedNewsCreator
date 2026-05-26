@@ -6,7 +6,7 @@ from pathlib import Path
 
 FILE_NAME = "2026-05-24_21-06-01_iran-nuclear-deal"
 HEADLINE = "इरान परमाणु समझौता"
-FONT_PATH = "/home/eyepatchxy/.local/share/noto-sans-devanagari/NotoSansDevanagari-Bold.ttf"
+FONT_PATH = "C:\\Windows\\Fonts\\Noto Sans Devanagari\\NotoSansDevanagari-Bold.ttf"
 
 
 def main() -> None:
