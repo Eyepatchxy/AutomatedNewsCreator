@@ -6,7 +6,9 @@ DATA_DIR = PROJECT_ROOT / "Data"
 RAW_NEWS_POOL_FILE = DATA_DIR / "raw_news_pool.json"
 PROCESSED_NEWS_FILE = DATA_DIR / "processed_news.json"
 
-CHANNELS_FILE = DATA_DIR / "channels.json"
+INPUTS_DIR = PROJECT_ROOT / "Inputs"
+CHANNELS_FILE = INPUTS_DIR / "channels.json"
+BACKGROUND_LAYOUT_FILE = INPUTS_DIR / "background_layout.png"
 
 OAUTH_DIR = PROJECT_ROOT / "oAuthSecrets"
 TOKEN_FILE = OAUTH_DIR / "youtube_token.json"

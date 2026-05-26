@@ -12,7 +12,7 @@ import json
 import math
 from dotenv import load_dotenv
 
-from paths import PROJECT_ROOT, GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR
+from paths import PROJECT_ROOT, GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR, BACKGROUND_LAYOUT_FILE
 from tasks.timeline_parser import build_timeline
 
 load_dotenv(PROJECT_ROOT / ".env")
@@ -55,7 +55,7 @@ def create_background(file_name, duration):
             ImageClip(str(img))
             .with_duration(clip_duration)
             .resized((1920, 1080))
-            .resized(lambda t: 1 + 0.03 * t)
+            .resized(lambda t: 1.08 + 0.02 * t)
 
         )
 
@@ -92,6 +92,12 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
         .with_duration(duration)
     )
 
+    layout_overlay = (
+        ImageClip(str(BACKGROUND_LAYOUT_FILE))
+        .with_duration(duration)
+        .resized((1920, 1080))
+    )
+
     text_clips = []
 
     for chunk in timeline:
@@ -102,20 +108,15 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
         subtitle = (
             TextClip(
                 text=chunk["text"],
-                font_size=56,
+                font_size=42,
                 font=FONT_PATH,
-                color="white",
-                size=(1820, 520),
+                color="black",
+                size=(1275, 120),
                 method="caption",
-                stroke_color="black",
-                stroke_width=3,
-            )
-            .with_position(
-                lambda t: (
-                    "center",
-                    760 - 20 * (t / chunk_duration),
-                )
-            )
+                text_align="left",
+                horizontal_align="left",
+            )   
+            .with_position((450, 750))
             .with_start(chunk["start"])
             .with_duration(chunk_duration)
             .with_effects([
@@ -127,7 +128,11 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
         text_clips.append(subtitle)
 
     final = CompositeVideoClip(
-        [background, headline] + text_clips,
+        [
+            background,
+            layout_overlay,
+            *text_clips,
+        ],
         size=(1920, 1080),
     ).with_duration(duration)
 

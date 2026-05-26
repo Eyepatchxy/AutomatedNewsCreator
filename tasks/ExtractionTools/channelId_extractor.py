@@ -1,6 +1,6 @@
 import json
 
-from paths import TOKEN_FILE
+from paths import TOKEN_FILE, CHANNELS_FILE
 
 
 def create_youtube_client():
@@ -72,7 +72,7 @@ def get_channel_id(identifier: str) -> str | None:
     return metadata["id"] if metadata else None
 
 
-def update_channel_ids(channels_file="channels.json"):
+def update_channel_ids(channels_file=CHANNELS_FILE):
 
     # Load channels
     with open(channels_file, "r", encoding="utf-8") as f:
