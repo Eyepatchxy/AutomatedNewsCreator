@@ -2,18 +2,19 @@ import json
 import os
 import sys
 from pathlib import Path
+from paths import FONT_FILE
 
 
 FILE_NAME = "2026-05-24_21-06-01_iran-nuclear-deal"
 HEADLINE = "इरान परमाणु समझौता"
-FONT_PATH = "C:\\Windows\\Fonts\\Noto Sans Devanagari\\NotoSansDevanagari-Bold.ttf"
+FONT_PATH = FONT_FILE
 
 
 def main() -> None:
     file_name = sys.argv[1] if len(sys.argv) > 1 else FILE_NAME
 
     if Path(FONT_PATH).exists():
-        os.environ.setdefault("VIDEO_TEXT_FONT", FONT_PATH)
+        os.environ.setdefault("VIDEO_TEXT_FONT", str(FONT_PATH))
 
     from tasks.video_generator import generate_video
 

@@ -114,7 +114,7 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
                 text_align="left",
                 horizontal_align="left",
             )   
-            .with_position((450, 750))
+            .with_position((445, 810))
             .with_start(chunk["start"])
             .with_duration(chunk_duration)
             .with_effects([
