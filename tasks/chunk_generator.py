@@ -37,8 +37,7 @@ Format:
 
 Constraints:
 - The text strings should be concise and capture the essence of the corresponding part of the script.
-- The text strings should be short, atmost 50 characters.
-- The text strings should be strictly in Hindi, even if the script contains other languages.
+- The text strings should be in either Devanagari, and may contain few English words for convenience.
 - The text strings should be suitable for use as captions, so they should be clear and easy to read.
 - The estimated timestamps should be in the format "mm:ss" and should be based on the assumption that the script is narrated at a natural pace.
 - Return the output as a list of dictionaries, where each dictionary has two keys: "start_timestamp" and "text". 
