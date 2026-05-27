@@ -1,6 +1,5 @@
 from importlib import import_module
 
-
 ROUTES = [
     {
         "label": "Home",

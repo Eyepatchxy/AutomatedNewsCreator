@@ -28,7 +28,8 @@ from tasks.ExtractionTools.channelwise_news_extractor import (
 )
 from tasks.ExtractionTools.deduplicator import semantic_deduplicate
 
-sys.stdout.reconfigure(encoding="utf-8")
+if sys.stdout:
+    sys.stdout.reconfigure(encoding="utf-8")
 
 
 def video_pipeline(
