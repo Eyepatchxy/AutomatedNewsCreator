@@ -19,7 +19,6 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 DURATION_PER_IMAGE = 30
 
-
 def create_background(file_name, duration):
 
     folder = GENERATED_BACKIMAGES_DIR / file_name
@@ -114,7 +113,7 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
                 text_align="left",
                 horizontal_align="left",
             )   
-            .with_position((450, 750))
+            .with_position((445, 820))
             .with_start(chunk["start"])
             .with_duration(chunk_duration)
             .with_effects([

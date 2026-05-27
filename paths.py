@@ -9,11 +9,10 @@ PROCESSED_NEWS_FILE = DATA_DIR / "processed_news.json"
 INPUTS_DIR = PROJECT_ROOT / "Inputs"
 CHANNELS_FILE = INPUTS_DIR / "channels.json"
 BACKGROUND_LAYOUT_FILE = INPUTS_DIR / "background_layout.png"
-FONT_FILE = INPUTS_DIR / "vt.ttf"
+FONT_FILE = INPUTS_DIR / "video_text_font.ttf"
 
 OAUTH_DIR = PROJECT_ROOT / "oAuthSecrets"
 TOKEN_FILE = OAUTH_DIR / "youtube_token.json"
-CLIENT_SECRET_FILE = OAUTH_DIR / "client_secret.json"
 
 GENERATED_DIR = PROJECT_ROOT / "Generated"
 GENERATED_ARTICLES_DIR = GENERATED_DIR / "Articles"

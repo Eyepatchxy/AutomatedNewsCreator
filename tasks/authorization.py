@@ -1,11 +1,9 @@
-from pathlib import Path
-
+from paths import OAUTH_DIR, TOKEN_FILE
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 
 SCOPES = ["https://www.googleapis.com/auth/youtube"]
-BASE_DIR = Path(__file__).resolve().parent
-TOKEN_FILE = BASE_DIR / "youtube_token.json"
+BASE_DIR = OAUTH_DIR
 
 
 def find_client_secret():
