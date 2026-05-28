@@ -40,11 +40,10 @@ Constraints:
 - Write the script in natural spoken Hindi (not formal or literary Hindi)
 - Use simple vocabulary suitable for news narration
 - Avoid English words unless they are widely used in Hindi, and even then write them in Devanagari script.
-- Do add punctation, conjunctions, and transition words to make the script feel natural and engaging
-- Target a 90-second narrated video.
+- Do add punctation, conjunctions, and transition words to make the script feel natural and engaging.
 - Keep the script around 220 to 260 Hindi words.
 - Use 8 to 11 short paragraphs so the narration has natural pauses.
-- If the article has limited verified facts, still aim for at least 75 seconds, but do not add unverified facts or filler.
+- If the article has limited verified facts, still aim for a concise and accurate script, but do not add unverified facts or filler, focus on explaining the verified information clearly and engagingly.
 - Do not exaggerate or add unverified information
 - Only include background or context if it is widely known and relevant
 - Do not fabricate causes, impacts, or details
@@ -113,9 +112,11 @@ def generate_with_groq(prompt):
     return response.choices[0].message.content
 
 
-def generate_script(file_name, article_text):
+def generate_script(file_name, article_text, target_time=90):
 
-    prompt = instructions + "\n\n" + article_text
+    target_time_in_seconds = target_time
+
+    prompt = instructions + "\n" + f"Target a {target_time_in_seconds}-second narrated video." + "\n" + article_text
 
     script = None
 

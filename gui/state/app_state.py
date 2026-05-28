@@ -8,4 +8,5 @@ STATE: dict[str, Any] = {
     "channel_flash": None,
     "extraction_job": None,
     "video_job": None,
+    "target_time": 90
 }

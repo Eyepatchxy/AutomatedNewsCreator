@@ -35,6 +35,7 @@ if sys.stdout:
 def video_pipeline(
     title,
     description,
+    target_time=90,
     upload=True,
     privacy=DEFAULT_PRIVACY_STATUS,
     dry_run_upload=False
@@ -50,7 +51,7 @@ def video_pipeline(
         raise RuntimeError("[INFO] No generated article found.")
 
     article_details = article.get("details", "")
-    script = generate_script(file_name, article_details)
+    script = generate_script(file_name, article_details, target_time=target_time)
     thumbnail_file = generate_thumbnail(file_name)
     audio_file = generate_audio(file_name, script)
     audio = AudioFileClip(str(audio_file))
