@@ -72,8 +72,9 @@ def run_video_generation_job():
 
     job = STATE.get("video_job") or {}
     result = video_pipeline(
-        job.get("title", ""),
-        job.get("description", ""),
+        title=job.get("title", ""),
+        description=job.get("description", ""),
+        target_time=STATE.get("target_time", 90),
         upload=job.get("upload", True),
     )
     removed_processed_news = False
