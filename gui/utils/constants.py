@@ -13,6 +13,7 @@ VIDEO_STAGES = [
     "Chunks Generated",
     "Audio Generated",
     "Visuals Generated",
-    "Rendering",
+    "Timeline Generated",
     "Final Encoding",
+    "Uploading"
 ]

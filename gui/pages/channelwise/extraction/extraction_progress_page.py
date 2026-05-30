@@ -13,8 +13,24 @@ from gui.state.app_state import STATE
 def extraction_progress_page() -> None:
     page_shell(get_path("Extraction Progress"))
     with content():
-        back_button(get_path("Extraction Confirmation"))
-        page_title("Extraction Progress", "Fetching videos and deduplicating channel news.")
+        with ui.row().classes("w-full justify gap-8"):
+            with ui.element("div").classes("flex-1"):
+                back_button(get_path("Extraction Confirmation"))
+
+            with ui.element("div").classes("flex justify-center"):
+                page_title(
+                    "Extraction Progress",
+                    "Fetching videos and deduplicating channel news.",
+                )
+
+            with ui.element("div").classes("flex-1 flex justify-end"):
+                navigate_button = ui.button(
+                    "Continue",
+                    icon="arrow_forward",
+                    on_click=lambda: ui.navigate.to(get_path("Processed News")),
+                ).props("color=primary")
+                navigate_button.visible = False
+            
         pipeline = ProgressPipeline(
             EXTRACTION_STAGES,
             "Extraction",
@@ -42,5 +58,6 @@ def extraction_progress_page() -> None:
 
             pipeline.finish_success(f"Saved {len(result)} processed stories")
             result_label.text = f"Processed stories: {len(result)}"
+            navigate_button.visible = True
 
         ui.timer(0.1, start_job, once=True)

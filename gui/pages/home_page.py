@@ -2,6 +2,7 @@ from nicegui import ui
 from gui.components.page_shell import page_shell
 from gui.components.cards import action_card
 from gui.components.content import content
+from tasks.authorization import authorize
 from gui.routes import get_path
 
 
@@ -13,6 +14,22 @@ def home_page() -> None:
             ui.label("Automated News Creator").classes(
                 "text-center text-5xl font-bold tracking-tight"
             )
+            with ui.row().classes("w-full justify-end"):
+                ui.button(
+                    "Renew Youtube Token",
+                    icon="token",
+                    on_click=lambda: authorize(
+                        on_success=lambda: ui.notify(
+                            "YouTube token renewed successfully",
+                            type="positive",
+                        ),
+                        on_error=lambda e: ui.notify(
+                            f"Authorization failed: {e}",
+                            type="negative",
+                        ),
+                    ),
+                ).props("color=primary")
+
             with ui.row().classes("w-full max-w-4xl gap-5"):
                 action_card(
                     "Generate Using YT Channels",

@@ -8,7 +8,8 @@ PROCESSED_NEWS_FILE = DATA_DIR / "processed_news.json"
 
 INPUTS_DIR = PROJECT_ROOT / "Inputs"
 CHANNELS_FILE = INPUTS_DIR / "channels.json"
-BACKGROUND_LAYOUT_FILE = INPUTS_DIR / "default_layout_horizontal.png"
+HORIZONTAL_LAYOUT_FILE = INPUTS_DIR / "default_layout_horizontal.png"
+VERTICAL_LAYOUT_FILE = INPUTS_DIR / "default_layout_vertical.png"
 FONT_FILE = INPUTS_DIR / "video_text_font.ttf"
 
 OAUTH_DIR = PROJECT_ROOT / "oAuthSecrets"
