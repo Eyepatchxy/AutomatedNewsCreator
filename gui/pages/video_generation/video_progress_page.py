@@ -13,7 +13,7 @@ from gui.state.app_state import STATE
 def video_progress_page() -> None:
     page_shell()
     with content():
-        back_button(get_path("Video Configuration"))
+        back_button(get_path("Home"))
         page_title("Video Generation Progress", "Generating script, audio, visuals, and final video.")
         pipeline = ProgressPipeline(
             VIDEO_STAGES,

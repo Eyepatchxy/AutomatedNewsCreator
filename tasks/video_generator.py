@@ -12,7 +12,7 @@ import json
 import math
 from dotenv import load_dotenv
 
-from paths import PROJECT_ROOT, GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR, BACKGROUND_LAYOUT_FILE, FONT_FILE
+from paths import PROJECT_ROOT, GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR, HORIZONTAL_LAYOUT_FILE, VERTICAL_LAYOUT_FILE, FONT_FILE
 from tasks.timeline_parser import build_timeline
 
 load_dotenv(PROJECT_ROOT / ".env")
@@ -90,7 +90,7 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
     # )
 
     layout_overlay = (
-        ImageClip(str(BACKGROUND_LAYOUT_FILE))
+        ImageClip(str(HORIZONTAL_LAYOUT_FILE))
         .with_duration(duration)
         .resized((1920, 1080))
     )

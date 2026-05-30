@@ -1,10 +1,16 @@
 {
     "channels": [
         {
-        "priority": 1,
-        "name": "The Lallantop",
-        "handle": "@TheLallantop",
-        "id": "UCx8Z14PpntdaxCt2hakbQLQ"
+            "priority": 1,
+            "name": "News Pinch",
+            "handle": "@TheNewsPinch",
+            "id": "UCURG8Jv8fpoI_yoK5AAbMMQ"
+        },
+        {
+            "priority": 2,
+            "name": "The Lallantop",
+            "handle": "@TheLallantop",
+            "id": "UCx8Z14PpntdaxCt2hakbQLQ"
         }
     ]
 }

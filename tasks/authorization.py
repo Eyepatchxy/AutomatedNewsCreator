@@ -13,25 +13,35 @@ def find_client_secret():
     return client_files[0]
 
 
-def main():
-    client_file = find_client_secret()
+def authorize(on_success=None, on_error=None):
+    try:
+        client_file = find_client_secret()
 
-    print(f"Using client file: {client_file}")
-    print(f"Token will be saved to: {TOKEN_FILE}")
-    print("Opening browser for YouTube OAuth consent...")
+        print(f"Using client file: {client_file}")
+        print(f"Token will be saved to: {TOKEN_FILE}")
+        print("Opening browser for YouTube OAuth consent...")
 
-    flow = InstalledAppFlow.from_client_secrets_file(str(client_file), SCOPES)
-    creds = flow.run_local_server(
-        port=0,
-        prompt="consent",
-        access_type="offline",
-    )
+        flow = InstalledAppFlow.from_client_secrets_file(
+            str(client_file),
+            SCOPES
+        )
 
-    TOKEN_FILE.write_text(creds.to_json(), encoding="utf-8")
+        creds = flow.run_local_server(
+            port=0,
+            prompt="consent",
+            access_type="offline",
+        )
 
-    print(f"Saved token: {TOKEN_FILE}")
-    print(f"Has refresh token: {bool(creds.refresh_token)}")
+        TOKEN_FILE.write_text(creds.to_json(), encoding="utf-8")
 
+        print(f"Saved token: {TOKEN_FILE}")
+        print(f"Has refresh token: {bool(creds.refresh_token)}")
 
-if __name__ == "__main__":
-    main()
+        if on_success:
+            on_success()
+
+    except Exception as e:
+        print(f"Authorization failed: {e}")
+
+        if on_error:
+            on_error(str(e))

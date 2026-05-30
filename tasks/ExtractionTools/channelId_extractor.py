@@ -29,42 +29,41 @@ def get_channel_metadata(identifier: str) -> dict | None:
     youtube = create_youtube_client()
     cleaned = _clean_identifier(identifier)
     lookup_value = cleaned.lstrip("@")
+    handle = handle = f"@{lookup_value}"
 
-    if not lookup_value:
+    if not handle:
+        return None
+    
+    try:
+        response = youtube.channels().list(
+            part="id,snippet",
+            forHandle=handle,
+        ).execute()
+    except Exception as error:
+        raise RuntimeError(
+        f"Failed to fetch YouTube channel '{handle}'"
+    ) from error
+
+    items = response.get("items", [])
+    if not items:
+        raise RuntimeError(
+        f"Failed to fetch YouTube channel '{handle}'"
+    ) from error
+
+    item = items[0]
+
+    channel_id = item.get("id")
+    channel_name = item.get("snippet", {}).get("title")
+
+    if not channel_id or not channel_name:
+        print(f"Incomplete channel data for: {identifier}")
         return None
 
-    lookups = (
-        {"forHandle": lookup_value},
-        {"forUsername": lookup_value},
-    )
-
-    for lookup in lookups:
-        try:
-            response = youtube.channels().list(
-                part="id,snippet",
-                **lookup,
-            ).execute()
-        except Exception:
-            continue
-
-        items = response.get("items", [])
-        if not items:
-            continue
-
-        item = items[0]
-        snippet = item.get("snippet", {})
-        handle = snippet.get("customUrl") or cleaned
-        if handle and not handle.startswith("@"):
-            handle = f"@{handle}"
-
-        return {
-            "id": item["id"],
-            "name": snippet.get("title") or handle or cleaned,
-            "handle": handle,
-        }
-
-    print(f"Channel not found: {identifier}")
-    return None
+    return {
+        "id": channel_id,
+        "name": channel_name,
+        "handle": handle,
+    }
 
 
 def get_channel_id(identifier: str) -> str | None:

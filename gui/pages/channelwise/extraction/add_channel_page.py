@@ -37,11 +37,13 @@ def add_channel_page() -> None:
                 def submit_channel() -> None:
                     identifier = (handle_input.value or "").strip()
                     if not identifier:
-                        ui.notify("Enter a YouTube handle or username.", type="warning")
+                        ui.notify("Enter a YouTube handle.", type="warning")
                         return
 
                     try:
                         channel = add_channel(identifier, int(priority_select.value))
+
+                    
                     except ValueError as error:
                         STATE["channel_flash"] = {
                             "message": str(error),
