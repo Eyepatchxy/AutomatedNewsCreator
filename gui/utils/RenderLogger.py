@@ -22,8 +22,11 @@ class RenderLogger(ProgressBarLogger):
         current = bar.get("index", 0)
         total = bar.get("total", 0)
 
+        progress = (current / total)
+        progress = round(progress, 4) 
+
         if total:
-            self.pipeline.update_stage_progress(8, current / total)
+            self.pipeline.update_stage_progress(8, progress)
 
         log_bool = current % 10
             

@@ -5,6 +5,7 @@ from google import genai
 from groq import Groq
 from paths import PROJECT_ROOT, GENERATED_SCRIPTS_DIR
 from gui.components.progress_pipeline import ProgressPipeline
+from gui.state.models import VideoType
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -19,12 +20,6 @@ GROQ_MODEL = os.getenv("SCRIPT_GENERATION_GROQ_MODEL", "llama-3.3-70b-versatile"
 
 instructions = """You are a script writer for a YouTube hindi news channel.
 Your task is to convert the given news article into a clear and engaging hindi news script.
-
-Structure:
-- Start with channel intro with channel name. [Bee News Hindi]
-- Then, give the news title as a headline.
-- Next, narrate the news in a clear and engaging manner, using simple language suitable for a wide audience.
-- Finally, end with a closing statement encouraging viewers to subscribe and stay tuned for more news updates.
 
 STRICT RULES:
 - Do NOT add any new facts
@@ -48,7 +43,7 @@ Constraints:
 - Only include background or context if it is widely known and relevant
 - Do not fabricate causes, impacts, or details
 - Do not include scene directions (e.g., [Cut to...], [Music...])
-- Start directly with a strong headline-style opening
+- Follow the requested structure for the selected video format.
 - Avoid dramatic or exaggerated language
 - Keep the tone professional and factual
 
@@ -58,6 +53,20 @@ Style:
 - Keep it engaging but not clickbait
 
 Article: 
+"""
+
+FULL_VIDEO_STRUCTURE = """Structure:
+- Start with channel intro with channel name. [Bee News Hindi]
+- Then, give the news title as a headline.
+- Next, narrate the news in a clear and engaging manner, using simple language suitable for a wide audience.
+- Finally, end with a closing statement encouraging viewers to subscribe and stay tuned for more news updates.
+"""
+
+SHORT_VIDEO_STRUCTURE = """Structure:
+- Do NOT include a channel intro or channel name.
+- Start directly with the news headline or the most important verified update.
+- Jump straight into the news in a clear and engaging manner, using simple language suitable for a wide audience.
+- Keep the closing short and avoid a long subscribe-style outro.
 """
 
 # def generate_script(file_name, article_text):
@@ -112,13 +121,33 @@ def generate_with_groq(prompt):
     return response.choices[0].message.content
 
 
-def generate_script(file_name, article_text, pipeline:ProgressPipeline, target_time=90):
+def generate_script(
+    file_name,
+    article_text,
+    pipeline:ProgressPipeline,
+    target_time=90,
+    video_type: VideoType = VideoType.FULL,
+):
 
     pipeline.start_stage(2)
 
     target_time_in_seconds = target_time
 
-    prompt = instructions + "\n" + f"Target a {target_time_in_seconds} narrated video." + "\n" + article_text
+    structure = (
+        SHORT_VIDEO_STRUCTURE
+        if video_type == VideoType.SHORT
+        else FULL_VIDEO_STRUCTURE
+    )
+
+    prompt = (
+        instructions
+        + "\n"
+        + structure
+        + "\n"
+        + f"Target a {target_time_in_seconds} narrated video."
+        + "\n"
+        + article_text
+    )
 
     script = None
 

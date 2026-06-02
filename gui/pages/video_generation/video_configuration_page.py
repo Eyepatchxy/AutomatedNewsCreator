@@ -18,7 +18,7 @@ def video_options_panel() -> None:
             with ui.grid(columns=3).classes("w-full justify gap-35"):
                 ui.select(
                     [VideoType.FULL, VideoType.SHORT],
-                    value=VideoType.FULL,
+                    value=STATE.get("video_type", VideoType.FULL),
                     label="Video Type",
                 ).classes("w-64").bind_value(
                     STATE,
@@ -27,11 +27,11 @@ def video_options_panel() -> None:
 
                 ui.select(
                     [VideoDuration.SEC_30, VideoDuration.SEC_60, VideoDuration.SEC_90, VideoDuration.SEC_120],
-                    value=VideoDuration.SEC_90,
+                    value=STATE.get("target_time", VideoDuration.SEC_90),
                     label="Target Duration",
                 ).bind_value(
                     STATE,
-                    "target_duration"
+                    "target_time"
                 )
 
                 ui.select(

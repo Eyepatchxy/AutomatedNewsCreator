@@ -28,9 +28,12 @@ from tasks.ExtractionTools.channelwise_news_extractor import (
 )
 from tasks.ExtractionTools.deduplicator import semantic_deduplicate
 from gui.components.progress_pipeline import ProgressPipeline
+from gui.state.models import VideoDuration, VideoType
 
 if sys.stdout:
     sys.stdout.reconfigure(encoding="utf-8")
+
+GENEERATE_THUMBNAIL_FOR_SHORTS = False
 
 
 def video_pipeline(
@@ -38,6 +41,7 @@ def video_pipeline(
     description,
     pipeline:ProgressPipeline,
     target_time=90,
+    video_type=VideoType.FULL,
     upload=True,
     privacy=DEFAULT_PRIVACY_STATUS,
     dry_run_upload=False
@@ -54,7 +58,18 @@ def video_pipeline(
         raise RuntimeError("[INFO] No generated article found.")
 
     article_details = article.get("details", "")
-    script = generate_script(file_name, article_details, pipeline=pipeline, target_time=target_time)
+    if isinstance(target_time, VideoDuration):
+        target_time = target_time.value
+
+    video_type = VideoType(video_type or VideoType.FULL)
+
+    script = generate_script(
+        file_name,
+        article_details,
+        pipeline=pipeline,
+        target_time=target_time,
+        video_type=video_type,
+    )
     audio_file = generate_audio(file_name, script, pipeline=pipeline)
     audio = AudioFileClip(str(audio_file))
     duration = math.ceil(audio.duration)
@@ -62,8 +77,24 @@ def video_pipeline(
 
     chunks = generate_chunks(file_name, script, pipeline=pipeline, duration=duration)
     timeline = build_timeline(file_name, chunks, duration, pipeline=pipeline)
-    thumbnail_file = generate_thumbnail(file_name, pipeline=pipeline)
-    backimages = generate_backimages(file_name, timeline, duration, pipeline=pipeline)
+    if video_type == VideoType.SHORT and not GENEERATE_THUMBNAIL_FOR_SHORTS:
+        thumbnail_file = None
+        pipeline.start_stage(6)
+        pipeline.log.push("Thumbnail generation skipped for short video")
+        pipeline.complete_stage(6)
+    else:
+        thumbnail_file = generate_thumbnail(
+            file_name,
+            pipeline=pipeline,
+            video_type=video_type,
+        )
+    backimages = generate_backimages(
+        file_name,
+        timeline,
+        duration,
+        pipeline=pipeline,
+        video_type=video_type,
+    )
     headline=build_headline_text(article.get("type"))
 
     video_file = generate_video(
@@ -72,20 +103,26 @@ def video_pipeline(
         audio_file,
         pipeline=pipeline,
         headline_text=headline,
+        video_type=video_type,
     )
-    save_generated_video_record(file_name, privacy_status=privacy)
+    save_generated_video_record(
+        file_name,
+        privacy_status=privacy,
+        video_type=video_type,
+    )
 
     print("Pipeline complete.")
     print(f"Filename: {file_name}")
     print(f"Audio: {audio_file}")
     print(f"Video: {video_file}")
-    print(f"Thumbnail: {thumbnail_file}")
+    print(f"Thumbnail: {thumbnail_file if thumbnail_file else 'skipped'}")
     if upload:
         upload_record = publish_to_youtube(
             file_name,
             pipeline=pipeline,
             privacy_status=privacy,
-            dry_run=dry_run_upload
+            dry_run=dry_run_upload,
+            video_type=video_type,
         )
         if dry_run_upload:
             print(f"YouTube dry-run record saved")

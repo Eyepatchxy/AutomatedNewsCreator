@@ -5,12 +5,13 @@ from pathlib import Path
 
 from nicegui import run, ui
 
+from gui.state.models import VideoType
 from gui.components.progress_pipeline import ProgressPipeline
 from gui.utils.constants import VIDEO_STAGES
 from paths import FONT_FILE
 
 
-FILE_NAME = "2026-05-31_18-54-36_ghaziabad-murder-case"
+FILE_NAME = "2026-06-02_18-37-01_cbse-website-hack"
 HEADLINE = ""
 FONT_PATH = FONT_FILE
 
@@ -31,6 +32,7 @@ def render_video(file_name: str, pipeline: ProgressPipeline) -> str:
         audio_file,
         pipeline=pipeline,
         headline_text=HEADLINE,
+        video_type=VideoType.SHORT
     )
 
 

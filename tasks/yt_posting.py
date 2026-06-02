@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from gui.components.progress_pipeline import ProgressPipeline
+from gui.state.models import VideoType
 from paths import (
     GENERATED_ARTICLES_DIR,
     GENERATED_THUMBNAILS_DIR,
@@ -237,15 +238,22 @@ def build_video_record(
     file_name: str,
     privacy_status: str = DEFAULT_PRIVACY_STATUS,
     dry_run: bool = False,
+    video_type: VideoType | str | None = None,
 ) -> dict:
     video_path = find_video(file_name)
     thumbnail_path = find_thumbnail(file_name)
     existing_record = load_upload_record(file_name)
     now = datetime.now(timezone.utc).isoformat()
+    record_video_type = (
+        VideoType(video_type).value
+        if video_type is not None
+        else existing_record.get("video_type")
+    )
 
     record = {
         **existing_record,
         "file_name": file_name,
+        "video_type": record_video_type,
         "video_path": str(video_path),
         "thumbnail_path": str(thumbnail_path) if thumbnail_path else None,
         "metadata": build_upload_metadata(file_name, privacy_status),
@@ -263,8 +271,13 @@ def build_video_record(
 def save_generated_video_record(
     file_name: str,
     privacy_status: str = DEFAULT_PRIVACY_STATUS,
+    video_type: VideoType | str | None = None,
 ) -> dict:
-    record = build_video_record(file_name, privacy_status=privacy_status)
+    record = build_video_record(
+        file_name,
+        privacy_status=privacy_status,
+        video_type=video_type,
+    )
     record["status"] = "uploaded" if record["uploadedStatus"] else "generated"
     save_upload_record(file_name, record)
     return record
@@ -297,6 +310,7 @@ def publish_to_youtube(
     pipeline:ProgressPipeline | None = None,
     privacy_status: str = DEFAULT_PRIVACY_STATUS,
     dry_run: bool = False,
+    video_type: VideoType | str | None = None,
 ) -> dict:
     if pipeline:
         pipeline.start_stage(9)
@@ -307,6 +321,7 @@ def publish_to_youtube(
         file_name,
         privacy_status=privacy_status,
         dry_run=dry_run,
+        video_type=video_type,
     )
 
     if dry_run:
