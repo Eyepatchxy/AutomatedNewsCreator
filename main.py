@@ -27,6 +27,7 @@ from tasks.ExtractionTools.channelwise_news_extractor import (
     get_recent_videos,
 )
 from tasks.ExtractionTools.deduplicator import semantic_deduplicate
+from gui.components.progress_pipeline import ProgressPipeline
 
 if sys.stdout:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -35,12 +36,14 @@ if sys.stdout:
 def video_pipeline(
     title,
     description,
+    pipeline:ProgressPipeline,
     target_time=90,
     upload=True,
     privacy=DEFAULT_PRIVACY_STATUS,
     dry_run_upload=False
 ):
-    file_name = verify_news(title, description)
+
+    file_name = verify_news(pipeline=pipeline, title=title, description=description)
     if not file_name:
         raise RuntimeError("[INFO] News verification did not produce an article.")
 
@@ -51,23 +54,24 @@ def video_pipeline(
         raise RuntimeError("[INFO] No generated article found.")
 
     article_details = article.get("details", "")
-    script = generate_script(file_name, article_details, target_time=target_time)
-    thumbnail_file = generate_thumbnail(file_name)
-    audio_file = generate_audio(file_name, script)
+    script = generate_script(file_name, article_details, pipeline=pipeline, target_time=target_time)
+    audio_file = generate_audio(file_name, script, pipeline=pipeline)
     audio = AudioFileClip(str(audio_file))
     duration = math.ceil(audio.duration)
     audio.close()
 
-    chunks = generate_chunks(file_name, script, duration=duration)
-    timeline = build_timeline(file_name, chunks, duration)
-    backimages = generate_backimages(file_name, timeline, duration)
+    chunks = generate_chunks(file_name, script, pipeline=pipeline, duration=duration)
+    timeline = build_timeline(file_name, chunks, duration, pipeline=pipeline)
+    thumbnail_file = generate_thumbnail(file_name, pipeline=pipeline)
+    backimages = generate_backimages(file_name, timeline, duration, pipeline=pipeline)
     headline=build_headline_text(article.get("type"))
 
     video_file = generate_video(
         file_name,
         chunks,
         audio_file,
-        headline,
+        pipeline=pipeline,
+        headline_text=headline,
     )
     save_generated_video_record(file_name, privacy_status=privacy)
 
@@ -79,6 +83,7 @@ def video_pipeline(
     if upload:
         upload_record = publish_to_youtube(
             file_name,
+            pipeline=pipeline,
             privacy_status=privacy,
             dry_run=dry_run_upload
         )
@@ -86,6 +91,9 @@ def video_pipeline(
             print(f"YouTube dry-run record saved")
         else:
             print(f"YouTube video uploaded: {upload_record['youtube_url']}")
+    else:
+        pipeline.log.push("Uploading skipped")
+        pipeline.complete_stage(9)
 
     return video_file
 

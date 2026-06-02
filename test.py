@@ -2,17 +2,20 @@ import json
 import os
 import sys
 from pathlib import Path
+
+from nicegui import run, ui
+
+from gui.components.progress_pipeline import ProgressPipeline
+from gui.utils.constants import VIDEO_STAGES
 from paths import FONT_FILE
 
 
-FILE_NAME = "2026-05-24_21-06-01_iran-nuclear-deal"
-HEADLINE = "इरान परमाणु समझौता"
+FILE_NAME = "2026-05-31_18-54-36_ghaziabad-murder-case"
+HEADLINE = ""
 FONT_PATH = FONT_FILE
 
 
-def main() -> None:
-    file_name = sys.argv[1] if len(sys.argv) > 1 else FILE_NAME
-
+def render_video(file_name: str, pipeline: ProgressPipeline) -> str:
     if Path(FONT_PATH).exists():
         os.environ.setdefault("VIDEO_TEXT_FONT", str(FONT_PATH))
 
@@ -22,10 +25,46 @@ def main() -> None:
     audio_file = Path("Generated/Audios") / f"{file_name}.wav"
 
     chunks = json.loads(chunks_file.read_text(encoding="utf-8"))
-    output_file = generate_video(file_name, chunks, audio_file, HEADLINE)
+    return generate_video(
+        file_name,
+        chunks,
+        audio_file,
+        pipeline=pipeline,
+        headline_text=HEADLINE,
+    )
 
-    print(output_file)
+
+@ui.page("/")
+def test_pipeline_page() -> None:
+    file_name = sys.argv[1] if len(sys.argv) > 1 else FILE_NAME
+
+    ui.label("Video Render Pipeline Test").classes("text-2xl font-semibold")
+    ui.label(file_name).classes("text-sm text-slate-500")
+
+    pipeline = ProgressPipeline(stages=VIDEO_STAGES)
+    result_label = ui.label("").classes("text-sm text-slate-500")
+
+    async def start_render() -> None:
+        for stage_no in range(1, 8):
+            pipeline.start_stage(stage_no)
+            pipeline.complete_stage(stage_no)
+
+        pipeline.log.push("Starting video render test")
+
+        try:
+            output_file = await run.io_bound(render_video, file_name, pipeline)
+        except Exception as error:
+            pipeline.fail_stage(pipeline.current_stage, str(error))
+            result_label.text = "Render failed. Check the log."
+            return
+
+        pipeline.log.push("Uploading skipped for render test")
+        pipeline.complete_stage(9)
+        pipeline.complete_pipeline()
+        result_label.text = f"Video: {output_file}"
+
+    ui.timer(0.1, start_render, once=True)
 
 
 if __name__ == "__main__":
-    main()
+    ui.run(title="Pipeline Render Test", reload=False)

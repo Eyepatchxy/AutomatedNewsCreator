@@ -7,6 +7,7 @@ import requests
 from dotenv import load_dotenv
 
 from paths import PROJECT_ROOT, GENERATED_ARTICLES_DIR, GENERATED_BACKIMAGES_DIR
+from gui.components.progress_pipeline import ProgressPipeline
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -16,7 +17,7 @@ DEFAULT_MODEL = os.getenv("BACKIMAGE_IMAGE_MODEL", "grok-imagine-image")
 DEFAULT_SIZE = "1792x1024"
 
 MAX_RETRIES = 3
-MAX_IMAGES = 3
+MAX_IMAGES = 4
 DURATION_PER_IMAGE = 30
 
 
@@ -51,10 +52,13 @@ def generate_backimages(
     file_name,
     timeline,
     duration,
+    pipeline:ProgressPipeline,
     model=DEFAULT_MODEL,
     image_format="png",
     max_retries=MAX_RETRIES,
 ):
+    pipeline.start_stage(7)
+
     article_path = GENERATED_ARTICLES_DIR / f"{file_name}.json"
 
     if not article_path.exists():
@@ -211,6 +215,8 @@ def generate_backimages(
             ):
                 response.raise_for_status()
 
+            pipeline.update_stage_progress(7, index/image_count)
+
             time.sleep(2 ** attempt)
 
         if response is None:
@@ -250,5 +256,7 @@ def generate_backimages(
             str(output_file)
         )
         print(f"[INFO] Generated backimage {index + 1}/{image_count}")
+
+    pipeline.complete_stage(7)
 
     return generated_images

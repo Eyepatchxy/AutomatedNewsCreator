@@ -1,8 +1,12 @@
 import json
 import os
 from paths import GENERATED_TIMELINES_DIR
+from gui.components.progress_pipeline import ProgressPipeline
 
-def build_timeline(file_name, chunks, duration):
+def build_timeline(file_name, chunks, duration, pipeline: ProgressPipeline | None = None):
+    if pipeline is not None:
+        pipeline.start_stage(5)
+
     timeline = []
     duration = int(duration)
 
@@ -45,6 +49,9 @@ def build_timeline(file_name, chunks, duration):
     with open(GENERATED_TIMELINES_DIR / f"{file_name}.json", "w", encoding="utf-8") as f:
         json.dump(timeline, f, ensure_ascii=False, indent=4)
     print(f"[INFO] Timeline saved")
+
+    if pipeline is not None:
+        pipeline.complete_stage(5)
 
     return timeline
 

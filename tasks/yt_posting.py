@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-
+from gui.components.progress_pipeline import ProgressPipeline
 from paths import (
     GENERATED_ARTICLES_DIR,
     GENERATED_THUMBNAILS_DIR,
@@ -294,9 +294,13 @@ def list_unuploaded_videos() -> list[str]:
 
 def publish_to_youtube(
     file_name: str,
+    pipeline:ProgressPipeline | None = None,
     privacy_status: str = DEFAULT_PRIVACY_STATUS,
     dry_run: bool = False,
 ) -> dict:
+    if pipeline:
+        pipeline.start_stage(9)
+
     video_path = find_video(file_name)
     thumbnail_path = find_thumbnail(file_name)
     record = build_video_record(
@@ -310,6 +314,8 @@ def publish_to_youtube(
         record["uploadedStatus"] = False
         record["thumbnail_status"] = "found" if thumbnail_path else "not_found"
         save_upload_record(file_name, record)
+        if pipeline:
+            pipeline.complete_stage(9)
         return record
 
     youtube = get_youtube_client()
@@ -340,6 +346,10 @@ def publish_to_youtube(
 
     save_upload_record(file_name, record)
     mark_article_uploaded(file_name, True)
+
+    if pipeline:
+        pipeline.complete_stage(9)
+    
     return record
 
 

@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 from groq import Groq
 from paths import PROJECT_ROOT, GENERATED_SCRIPTS_DIR
+from gui.components.progress_pipeline import ProgressPipeline
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -41,7 +42,6 @@ Constraints:
 - Use simple vocabulary suitable for news narration
 - Avoid English words unless they are widely used in Hindi, and even then write them in Devanagari script.
 - Do add punctation, conjunctions, and transition words to make the script feel natural and engaging.
-- Keep the script around 220 to 260 Hindi words.
 - Use 8 to 11 short paragraphs so the narration has natural pauses.
 - If the article has limited verified facts, still aim for a concise and accurate script, but do not add unverified facts or filler, focus on explaining the verified information clearly and engagingly.
 - Do not exaggerate or add unverified information
@@ -53,7 +53,7 @@ Constraints:
 - Keep the tone professional and factual
 
 Style:
-- Use simple, clear language
+- Use simple, clear language with punctuation and conjunctions to create a natural flow.
 - Write in a natural, spoken tone suitable for voice narration
 - Keep it engaging but not clickbait
 
@@ -112,11 +112,13 @@ def generate_with_groq(prompt):
     return response.choices[0].message.content
 
 
-def generate_script(file_name, article_text, target_time=90):
+def generate_script(file_name, article_text, pipeline:ProgressPipeline, target_time=90):
+
+    pipeline.start_stage(2)
 
     target_time_in_seconds = target_time
 
-    prompt = instructions + "\n" + f"Target a {target_time_in_seconds}-second narrated video." + "\n" + article_text
+    prompt = instructions + "\n" + f"Target a {target_time_in_seconds} narrated video." + "\n" + article_text
 
     script = None
 
@@ -160,4 +162,6 @@ def generate_script(file_name, article_text, target_time=90):
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(script)
 
+
+    pipeline.complete_stage(2)
     return script

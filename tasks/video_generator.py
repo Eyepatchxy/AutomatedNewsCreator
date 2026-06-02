@@ -6,14 +6,14 @@ from moviepy import (
     concatenate_videoclips,
     vfx
 )
-
 import os
 import json
 import math
 from dotenv import load_dotenv
-
 from paths import PROJECT_ROOT, GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR, HORIZONTAL_LAYOUT_FILE, VERTICAL_LAYOUT_FILE, FONT_FILE
 from tasks.timeline_parser import build_timeline
+from gui.components.progress_pipeline import ProgressPipeline
+from gui.utils.RenderLogger import RenderLogger
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -61,7 +61,19 @@ def create_background(file_name, duration):
     return concatenate_videoclips(clips, method="compose").with_duration(duration)
 
 
-def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS"):
+def generate_video(
+    file_name,
+    chunks,
+    audio_file,
+    pipeline: ProgressPipeline | str | None = None,
+    headline_text="BREAKING NEWS",
+):
+    if isinstance(pipeline, str):
+        headline_text = pipeline
+        pipeline = None
+
+    if pipeline is not None:
+        pipeline.start_stage(8)
 
     if isinstance(chunks, str):
         chunks = json.loads(chunks)
@@ -139,11 +151,17 @@ def generate_video(file_name, chunks, audio_file, headline_text="BREAKING NEWS")
 
     output_file = GENERATED_VIDEOS_DIR / f"{file_name}.mp4"
 
+    logger = RenderLogger(pipeline) if pipeline is not None else None
+
     final.write_videofile(
         str(output_file),
         fps=24,
         codec="libx264",
         audio_codec="aac",
+        logger=logger
     )
+
+    if pipeline is not None:
+        pipeline.complete_stage(8)
 
     return str(output_file)
