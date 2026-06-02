@@ -8,19 +8,47 @@ from gui.services.news_service import load_processed_news
 from gui.services.pipeline_service import prepare_video_job_from_selection
 from gui.state.models import NewsItem
 from gui.routes import get_path
+from gui.state.models import VideoDuration, VideoType
 
 def video_options_panel() -> None:
+
     with ui.card().classes("surface w-full p-6 gap-5"):
         ui.label("Video Configuration").classes("text-xl font-semibold")
-        with ui.grid(columns=3).classes("w-full gap-4"):
-            ui.select(["Short", "Full"], value="Short", label="Video Type").props("outlined")
-            ui.select(["30 seconds", "60 seconds", "3 minutes", "5 minutes"], value="60 seconds", label="Duration").props(
-                "outlined"
-            )
-            ui.select(["News Desk", "Full Screen Visuals", "Split Layout"], value="News Desk", label="Background Layout").props(
-                "outlined"
-            )
-        return ui.switch("Upload after generation", value=True)
+        with ui.row():
+            with ui.grid(columns=3).classes("w-full justify gap-35"):
+                ui.select(
+                    [VideoType.FULL, VideoType.SHORT],
+                    value=VideoType.FULL,
+                    label="Video Type",
+                ).classes("w-64").bind_value(
+                    STATE,
+                    "video_type"
+                )
+
+                ui.select(
+                    [VideoDuration.SEC_30, VideoDuration.SEC_60, VideoDuration.SEC_90, VideoDuration.SEC_120],
+                    value=VideoDuration.SEC_90,
+                    label="Target Duration",
+                ).bind_value(
+                    STATE,
+                    "target_duration"
+                )
+
+                ui.select(
+                    ["News Desk", "Full Screen Visuals", "Split Layout"],
+                    value="News Desk",
+                    label="Background Layout",
+                ).bind_value(
+                    STATE,
+                    "background_layout"
+                )
+
+        ui.switch(
+            "Upload after generation"
+        ).bind_value(
+            STATE,
+            "upload_job"
+        )
 
 
 def topic_selector_panel() -> None:
@@ -56,10 +84,10 @@ def video_configuration_page() -> None:
         back_button("/yt/processed-news")
         page_title("Video Configuration", "Defaults are optimized so most runs can continue immediately.")
         topic_selector_panel()
-        upload_toggle = video_options_panel()
+        video_options_panel()
 
         def start_video_generation() -> None:
-            prepare_video_job_from_selection(upload=bool(upload_toggle.value))
+            prepare_video_job_from_selection()
             ui.navigate.to(get_path("Video Generation Progress"))
 
         with ui.row().classes("w-full justify-between"):

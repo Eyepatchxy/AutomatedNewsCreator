@@ -1,4 +1,5 @@
 from typing import Any
+from gui.state.models import VideoDuration, VideoType
 
 
 STATE: dict[str, Any] = {
@@ -8,5 +9,8 @@ STATE: dict[str, Any] = {
     "channel_flash": None,
     "extraction_job": None,
     "video_job": None,
-    "target_time": 90
+    "video_type": VideoType.FULL,
+    "upload_job": True,
+    "layout": None,
+    "target_time": VideoDuration.SEC_90
 }

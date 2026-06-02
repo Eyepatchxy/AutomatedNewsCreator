@@ -63,8 +63,9 @@ def upload_videos_page() -> None:
 
             for file_name in videos:
                 try:
+                    ui.notify(f"Uploading {file_name}")
                     await run.io_bound(upload_generated_video, file_name)
-                    ui.notify(f"Uploaded {file_name}.", type="positive")
+                    ui.notify(f"Uploaded {file_name}", type="positive")
                 except Exception as error:
                     ui.notify(f"Upload failed for {file_name}: {error}", type="negative")
                     break

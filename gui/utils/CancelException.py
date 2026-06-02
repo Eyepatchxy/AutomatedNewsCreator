@@ -1,0 +1,2 @@
+class PipelineCancelled(Exception):
+    pass

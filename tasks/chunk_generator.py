@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from groq import Groq
 from paths import PROJECT_ROOT, GENERATED_CHUNKS_DIR
+from gui.components.progress_pipeline import ProgressPipeline
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -47,7 +48,8 @@ Script:
 
 """
 
-def generate_chunks(file_name, script, duration=None):
+def generate_chunks(file_name, script, pipeline:ProgressPipeline, duration=None):
+    pipeline.start_stage(4)
 
     prompt = instructions + "\n" + script
     if duration:
@@ -87,5 +89,7 @@ def generate_chunks(file_name, script, duration=None):
     with open(GENERATED_CHUNKS_DIR / f"{file_name}.json", "w", encoding="utf-8") as f:
         json.dump(chunks, f, ensure_ascii=False, indent=2)
     print(f"[INFO] Chunks saved")
+
+    pipeline.complete_stage(4)
 
     return chunks

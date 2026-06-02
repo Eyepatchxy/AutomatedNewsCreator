@@ -6,6 +6,7 @@ from google.genai import types
 from groq import Groq
 from paths import PROJECT_ROOT, PROCESSED_NEWS_FILE, GENERATED_ARTICLES_DIR
 from tasks.filename_utils import build_file_name
+from gui.components.progress_pipeline import ProgressPipeline
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -59,9 +60,11 @@ def generate_with_groq(prompt):
 
 
 def verify_news(
+    pipeline:ProgressPipeline,
     title = "",
     description = "",
 ):
+    pipeline.start_stage(1)
     
     prompt = f"""
         You are a professional news verification system.
@@ -132,6 +135,8 @@ def verify_news(
             saved_article = True
         
         if saved_article:
+            pipeline.complete_stage(1)
+
             print(f"[INFO] Article verified and saved: {article['title']}")
 
             return file_name

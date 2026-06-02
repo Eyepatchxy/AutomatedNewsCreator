@@ -1,110 +1,222 @@
 from nicegui import ui
 import time
+from gui.state.models import Stage
 from gui.utils.helper import stage_classes, stage_icon
 from typing import Any
+from gui.utils.CancelException import PipelineCancelled
 
 class ProgressPipeline:
     def __init__(
         self,
-        stages: list[str],
-        log_prefix: str,
-        eta: str,
-        auto_tick: bool = True,
-        tick_seconds: float = 4.0,
+        stages: list[Stage],
     ) -> None:
-        self.stages = stages
-        self.log_prefix = log_prefix
-        self.current_index = 0
+        self.current_stage = None
+        self.stages = [
+            Stage(stage.sr_no, stage.name, stage.weight)
+            for stage in stages
+        ]
         self.started_at = time.monotonic()
         self.completed = False
+        self.cancel_requested = False
+
+        for stage in self.stages:
+            stage.progress = 0.00
+            stage.status = "pending"
 
         with ui.card().classes("surface p-6 w-full gap-5"):
             with ui.row().classes("w-full items-center justify-between"):
+                ui.button(
+                    "Cancel",
+                    icon="cancel",
+                    on_click=self.cancel,
+                ).props("color=negative")
+
                 ui.label("Pipeline").classes("text-xl font-semibold")
-                self.elapsed_label = ui.label("Elapsed: 00:00").classes("muted")
+                self.elapsed_label = ui.label("Elapsed: 00:00").classes("muted text-right")
+
+                self.elapsed_timer = ui.timer(
+                    1.0,
+                    self._update_elapsed,
+                )
 
             self.progress = ui.linear_progress(value=0).classes("w-full")
             with ui.row().classes("w-full gap-3"):
                 self.stage_cards: list[dict[str, Any]] = [
-                    self._make_stage_card(stage, "running" if i == 0 else "pending")
-                    for i, stage in enumerate(stages)
+                    self._make_stage_card(stage)
+                    for stage in self.stages
                 ]
 
             with ui.row().classes("w-full gap-4"):
                 with ui.card().classes("surface p-4 flex-1"):
-                    ui.label("Live Logs").classes("font-semibold")
+                    ui.label("Logs").classes("font-semibold")
                     self.log = ui.log(max_lines=80).classes(
                         "log-box h-64 w-full rounded bg-slate-950 p-3 text-sm text-slate-100"
                     )
-                with ui.card().classes("surface p-4 w-64"):
-                    ui.label("ETA").classes("font-semibold")
-                    self.eta_label = ui.label(eta).classes("text-2xl font-bold")
-                    ui.label("Updates as the job moves through the pipeline.").classes(
-                        "muted text-sm leading-5"
-                    )
+                # with ui.card().classes("surface p-4 w-64"):
+                #     ui.label("ETA").classes("font-semibold")
+                #     self.eta_label = ui.label(eta).classes("text-2xl font-bold")
+                #     ui.label("Updates as the job moves through the pipeline.").classes(
+                #         "muted text-sm leading-5"
+                #     )
 
-        self.log.push(f"{self.log_prefix}: queued")
-        self.timer = ui.timer(tick_seconds, self.tick) if auto_tick else None
+        self.log.push("Pipeline Queued")
 
-    def _make_stage_card(self, stage: str, status: str) -> dict[str, Any]:
-        with ui.card().classes(f"stage-card flex-1 border p-4 {stage_classes(status)}") as card:
-            icon = ui.icon(stage_icon(status)).classes("stage-icon text-2xl")
-            ui.label(stage).classes("font-semibold leading-5")
-            label = ui.label(status.title()).classes("stage-status text-xs uppercase tracking-wide")
+    def _find_stage(self, num: int | None) -> Stage | None:
+        return next(
+            (
+                stage
+                for stage in self.stages
+                if stage.sr_no == num
+            ),
+            None,
+        )
+
+    def _make_stage_card(self, stage: Stage) -> dict[str, Any]:
+        with ui.card().classes(f"stage-card flex-1 border p-4 {stage_classes(stage.status)}") as card:
+            icon = ui.icon(stage_icon(stage.status)).classes("stage-icon text-2xl")
+            ui.label(stage.name).classes("font-semibold leading-5")
+            label = ui.label(stage.status.title()).classes("stage-status text-xs uppercase tracking-wide")
+
+            stage.card = card
+            stage.icon = icon
+            stage.label = label
         return {"card": card, "icon": icon, "label": label}
+    
+    def _refresh_stage_ui(self, stage: Stage):
+        stage.card.classes(
+            replace=f"stage-card flex-1 border p-4 {stage_classes(stage.status)}"
+        )
+        stage.icon.name = stage_icon(stage.status)
+        stage.label.text = stage.status.title()
+        self.progress.value = self.calculate_progress()
 
-    def _set_stage(self, index: int, status: str) -> None:
-        stage = self.stage_cards[index]
-        card = stage["card"]
-        card.classes(replace=f"stage-card flex-1 border p-4 {stage_classes(status)}")
-        stage["icon"].name = stage_icon(status)
-        stage["label"].text = status.title()
+    def start_stage(self, num: int):
+        self.check_cancelled()
+        stage = self._find_stage(num)
+        if stage is None:
+            raise ValueError(f"Unknown pipeline stage: {num}")
 
-    def tick(self) -> None:
-        elapsed = int(time.monotonic() - self.started_at)
-        self.elapsed_label.text = f"Elapsed: {elapsed // 60:02d}:{elapsed % 60:02d}"
+        self.current_stage = stage.sr_no
+        stage.progress = 0.00
+        stage.status = "running"
+        self._refresh_stage_ui(stage)
+        self.log.push(
+            f"{stage.name}: started"
+        )
 
-        if self.completed:
-            return
 
-        if self.current_index >= len(self.stages) - 1:
-            self.progress.value = max(
-                self.progress.value,
-                (len(self.stages) - 1) / len(self.stages),
+    def update_stage_progress(self, num: int, progress: float):
+        self.check_cancelled()
+        stage = self._find_stage(num)
+        if stage is None:
+            raise ValueError(f"Unknown pipeline stage: {num}")
+
+        print(
+            f"Updating stage {num}: {progress}"
+        )
+        stage.progress = max(0.00, min(progress, 1.00))
+        self._refresh_stage_ui(stage)
+
+    def complete_stage(self, num: int):
+        self.check_cancelled()
+
+        stage = self._find_stage(num)
+        if stage is None:
+            raise ValueError(f"Unknown pipeline stage: {num}")
+
+        self.current_stage = None
+        stage.progress = 1.00
+        stage.status = "completed"
+        self._refresh_stage_ui(stage)
+        self.log.push(
+            f"{stage.name}: completed"
+        )
+
+    def calculate_progress(self):
+
+        return sum(
+            stage.progress * stage.weight
+            for stage in self.stages
+        )
+    
+    def complete_pipeline(self) -> None:
+        incomplete = [
+            stage.name
+            for stage in self.stages
+            if stage.progress < 1.0
+        ]
+
+        if incomplete:
+            raise RuntimeError(
+                f"Cannot complete pipeline. Incomplete stages: {', '.join(incomplete)}"
             )
-            self.log.push(f"{self.log_prefix}: {self.stages[self.current_index]} still running")
-            return
 
-        self._set_stage(self.current_index, "completed")
-        self.log.push(f"{self.log_prefix}: {self.stages[self.current_index]} completed")
-        self.current_index += 1
-        self.progress.value = self.current_index / len(self.stages)
+        self.completed = True
+        self.progress.value = 1.0
 
-        self._set_stage(self.current_index, "running")
-        self.log.push(f"{self.log_prefix}: {self.stages[self.current_index]} running")
+        self.log.push("Process completed")
+        self.elapsed_timer.cancel()
 
-    def finish_success(self, message: str = "Complete") -> None:
+    def fail_stage(self, num: int | None, reason: str) -> None:
         if self.completed:
             return
 
-        for index in range(self.current_index, len(self.stages)):
-            self._set_stage(index, "completed")
+        stage = self._find_stage(num)
+        if stage is None:
+            stage = self._find_stage(self.current_stage)
 
-        self.current_index = len(self.stages)
-        self.progress.value = 1
+        if stage is None:
+            self.log.push(f"Pipeline failed - {reason}")
+        else:
+            stage.status = "failed"
+            self._refresh_stage_ui(stage)
+            self.log.push(
+                f"{stage.name}: failed - {reason}"
+            )
+
         self.completed = True
-        self.log.push(f"{self.log_prefix}: {message}")
-        self.eta_label.text = "Complete"
-        if self.timer:
-            self.timer.cancel()
+        self.elapsed_timer.cancel()
 
-    def fail(self, message: str) -> None:
+    def fail(self, reason: str) -> None:
+        self.fail_stage(self.current_stage, reason)
+
+    def finish_success(self, message: str = "Process completed") -> None:
+        for stage in self.stages:
+            if stage.status != "completed":
+                stage.progress = 1.00
+                stage.status = "completed"
+                self._refresh_stage_ui(stage)
+
+        self.complete_pipeline()
+        self.log.push(message)
+    
+    def _update_elapsed(self):
+        elapsed = int(
+            time.monotonic()
+            - self.started_at
+        )
+
+        self.elapsed_label.text = (
+            f"Elapsed: "
+            f"{elapsed // 60:02d}:"
+            f"{elapsed % 60:02d}"
+        )
+
+    def cancel(self):
         if self.completed:
             return
 
-        self._set_stage(min(self.current_index, len(self.stages) - 1), "failed")
-        self.completed = True
-        self.log.push(f"{self.log_prefix}: failed - {message}")
-        self.eta_label.text = "Failed"
-        if self.timer:
-            self.timer.cancel()
+        self.cancel_requested = True
+
+        self.log.push(
+            "Cancellation requested..."
+        )
+
+    def check_cancelled(self):
+        if self.cancel_requested:
+
+            self.log.push(
+                "Pipeline cancelled"
+            )
+
+            raise PipelineCancelled()

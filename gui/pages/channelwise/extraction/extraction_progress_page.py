@@ -33,17 +33,13 @@ def extraction_progress_page() -> None:
             
         pipeline = ProgressPipeline(
             EXTRACTION_STAGES,
-            "Extraction",
-            "Running",
-            auto_tick=True,
-            tick_seconds=5.0,
         )
         result_label = ui.label("").classes("muted")
 
         async def start_job() -> None:
             job = STATE.get("extraction_job")
             if not job:
-                pipeline.fail("No extraction job was queued.")
+                pipeline.fail_stage(None, "No extraction job was queued.")
                 result_label.text = "Return to channel selection and start extraction again."
                 return
 
@@ -52,7 +48,7 @@ def extraction_progress_page() -> None:
                 result = await run.io_bound(run_channelwise_extraction_job)
             except Exception as error:
                 STATE["extraction_job"] = {**job, "status": "failed", "error": str(error)}
-                pipeline.fail(str(error))
+                pipeline.fail_stage(pipeline.current_stage, str(error))
                 result_label.text = "Extraction failed. Check the log and credentials."
                 return
 

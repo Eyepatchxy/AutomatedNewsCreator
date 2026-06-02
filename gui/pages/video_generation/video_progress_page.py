@@ -15,32 +15,25 @@ def video_progress_page() -> None:
     with content():
         back_button(get_path("Home"))
         page_title("Video Generation Progress", "Generating script, audio, visuals, and final video.")
-        pipeline = ProgressPipeline(
-            VIDEO_STAGES,
-            "Video generation",
-            "Running",
-            auto_tick=True,
-            tick_seconds=6.0,
-        )
+        pipeline = ProgressPipeline(stages= VIDEO_STAGES)
         result_label = ui.label("").classes("muted")
 
         async def start_job() -> None:
             job = STATE.get("video_job")
             if not job:
-                pipeline.fail("No video job was queued.")
+                pipeline.fail_stage(None, "No job was queued")
                 result_label.text = "Return to video configuration and start generation again."
                 return
 
             pipeline.log.push("Video generation: running real video_pipeline")
             try:
-                result = await run.io_bound(run_video_generation_job)
+                result = await run.io_bound(run_video_generation_job, pipeline)
             except Exception as error:
                 STATE["video_job"] = {**job, "status": "failed", "error": str(error)}
-                pipeline.fail(str(error))
+                pipeline.fail_stage(pipeline.current_stage, str(error))
                 result_label.text = "Video generation failed. Check the log and generated files."
                 return
 
-            pipeline.finish_success("Video file created")
             result_label.text = f"Video: {result}"
 
         ui.timer(0.1, start_job, once=True)

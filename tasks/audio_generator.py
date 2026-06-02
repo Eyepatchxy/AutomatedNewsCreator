@@ -1,6 +1,7 @@
 import os
 import time
 from pathlib import Path
+from gui.components.progress_pipeline import ProgressPipeline
 
 import requests
 
@@ -21,7 +22,10 @@ def generate_audio(
     sample_rate=24000,
     text_normalization=True,
     max_retries=3,
+    pipeline:ProgressPipeline
 ):
+    pipeline.start_stage(3)    
+
     if not script or not str(script).strip():
         raise ValueError("Script is empty. Cannot generate audio.")
 
@@ -75,5 +79,7 @@ def generate_audio(
     output_file = GENERATED_AUDIOS_DIR / f"{file_name}.{codec}"
     output_file.write_bytes(response.content)
     print(f"[INFO] Audio generated")
+
+    pipeline.complete_stage(3)
 
     return str(Path(output_file))

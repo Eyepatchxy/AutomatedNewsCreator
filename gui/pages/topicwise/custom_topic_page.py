@@ -102,7 +102,7 @@ def custom_topic_page() -> None:
                         ).props("color=primary")
 
         def quick_generate() -> None:
-            prepare_video_job("", "", upload=True)
+            prepare_video_job("", "", upload=STATE.get("upload_job", True))
             ui.navigate.to(get_path("Video Generation Progress"))
 
         with ui.row().classes("w-full justify-end"):

@@ -4,6 +4,7 @@ import time
 import requests
 from dotenv import load_dotenv
 from paths import PROJECT_ROOT, GENERATED_THUMBNAILS_DIR, GENERATED_ARTICLES_DIR
+from gui.components.progress_pipeline import ProgressPipeline
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -16,11 +17,14 @@ DEFAULT_SIZE = "1792x1024"  # 1792×1024, 1280x720
 def generate_thumbnail(
     file_name,
     *,
+    pipeline:ProgressPipeline,
     model=DEFAULT_MODEL,
     size=DEFAULT_SIZE,
     image_format="png",
-    max_retries=MAX_RETRIES,
+    max_retries=MAX_RETRIES
 ):
+    pipeline.start_stage(6)
+
     article_path = f"{GENERATED_ARTICLES_DIR}/{file_name}.json"
 
     if not os.path.exists(article_path):
@@ -138,5 +142,7 @@ def generate_thumbnail(
 
     output_file.write_bytes(image_response.content)
     print("[INFO] Thumbnail generated")
+
+    pipeline.complete_stage(6)
 
     return str(output_file)
