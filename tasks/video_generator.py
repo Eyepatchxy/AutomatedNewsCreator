@@ -14,12 +14,51 @@ from paths import PROJECT_ROOT, GENERATED_BACKIMAGES_DIR, GENERATED_VIDEOS_DIR, 
 from tasks.timeline_parser import build_timeline
 from gui.components.progress_pipeline import ProgressPipeline
 from gui.utils.RenderLogger import RenderLogger
+from gui.state.models import VideoType
 
 load_dotenv(PROJECT_ROOT / ".env")
 
 DURATION_PER_IMAGE = 30
 
-def create_background(file_name, duration):
+LAYOUT_SPECS = {
+    VideoType.FULL: {
+        "canvas_size": (1920, 1080),
+        "layout_file": HORIZONTAL_LAYOUT_FILE,
+        "caption": {
+            "font_size": 42,
+            "size": (1275, 120),
+            "position": (445, 820),
+            "text_align": "left",
+            "horizontal_align": "left",
+            "interline": 4,
+        },
+    },
+    VideoType.SHORT: {
+        "canvas_size": (1080, 1920),
+        "layout_file": VERTICAL_LAYOUT_FILE,
+        "caption": {
+            "font_size": 44,
+            "size": (600, 260),
+            "position": (380, 1580),
+            "text_align": "left",
+            "horizontal_align": "left",
+            "interline": 12,
+        },
+    },
+}
+
+
+def normalize_video_type(video_type) -> VideoType:
+    if isinstance(video_type, VideoType):
+        return video_type
+
+    try:
+        return VideoType(video_type)
+    except ValueError:
+        return VideoType.FULL
+
+
+def create_background(file_name, duration, layout_spec):
 
     folder = GENERATED_BACKIMAGES_DIR / file_name
 
@@ -51,7 +90,7 @@ def create_background(file_name, duration):
         clip = (
             ImageClip(str(img))
             .with_duration(clip_duration)
-            .resized((1920, 1080))
+            .resized(layout_spec["canvas_size"])
             .resized(lambda t: 1.08 + 0.02 * t)
 
         )
@@ -67,6 +106,7 @@ def generate_video(
     audio_file,
     pipeline: ProgressPipeline | str | None = None,
     headline_text="BREAKING NEWS",
+    video_type: VideoType = VideoType.FULL,
 ):
     if isinstance(pipeline, str):
         headline_text = pipeline
@@ -80,8 +120,10 @@ def generate_video(
 
     audio = AudioFileClip(str(audio_file))
     duration = math.ceil(audio.duration)
+    video_type = normalize_video_type(video_type)
+    layout_spec = LAYOUT_SPECS[video_type]
 
-    background = create_background(file_name, duration)
+    background = create_background(file_name, duration, layout_spec)
 
     timeline = build_timeline(file_name, chunks, duration)
 
@@ -102,12 +144,13 @@ def generate_video(
     # )
 
     layout_overlay = (
-        ImageClip(str(HORIZONTAL_LAYOUT_FILE))
+        ImageClip(str(layout_spec["layout_file"]))
         .with_duration(duration)
-        .resized((1920, 1080))
+        .resized(layout_spec["canvas_size"])
     )
 
     text_clips = []
+    caption_spec = layout_spec["caption"]
 
     for chunk in timeline:
         chunk_duration = chunk["end"] - chunk["start"]
@@ -117,15 +160,16 @@ def generate_video(
         subtitle = (
             TextClip(
                 text=chunk["text"],
-                font_size=42,
+                font_size=caption_spec["font_size"],
                 font=FONT_FILE,
                 color="black",
-                size=(1275, 120),
+                size=caption_spec["size"],
                 method="caption",
-                text_align="left",
-                horizontal_align="left",
+                text_align=caption_spec["text_align"],
+                horizontal_align=caption_spec["horizontal_align"],
+                interline=caption_spec["interline"]
             )   
-            .with_position((445, 820))
+            .with_position(caption_spec["position"])
             .with_start(chunk["start"])
             .with_duration(chunk_duration)
             .with_effects([
@@ -142,7 +186,7 @@ def generate_video(
             layout_overlay,
             *text_clips,
         ],
-        size=(1920, 1080),
+        size=layout_spec["canvas_size"],
     ).with_duration(duration)
 
     final = final.with_audio(audio)

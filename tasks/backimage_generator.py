@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 from paths import PROJECT_ROOT, GENERATED_ARTICLES_DIR, GENERATED_BACKIMAGES_DIR
 from gui.components.progress_pipeline import ProgressPipeline
+from gui.state.models import VideoType
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -53,6 +54,7 @@ def generate_backimages(
     timeline,
     duration,
     pipeline:ProgressPipeline,
+    video_type: VideoType = VideoType.FULL,
     model=DEFAULT_MODEL,
     image_format="png",
     max_retries=MAX_RETRIES,
@@ -82,6 +84,25 @@ def generate_backimages(
 
     if not api_key:
         raise ValueError("XAI_API_KEY is not set.")
+
+    if video_type == VideoType.SHORT:
+        format_requirements = """
+        Format requirements:
+        STRICT vertical 9:16 image for a YouTube Shorts video.
+        Portrait composition only.
+        Do not create a horizontal, square, or 16:9 image.
+        Keep important subjects centered and safe for a 1080x1920 vertical frame.
+        Leave clear vertical-safe space for subtitles and overlays.
+        """.strip()
+    else:
+        format_requirements = """
+        Format requirements:
+        STRICT horizontal 16:9 image for a normal YouTube video.
+        Landscape composition only.
+        Do not create a vertical, square, or 9:16 image.
+        Keep important subjects safe for a 1920x1080 horizontal frame.
+        Leave clear horizontal-safe space for subtitles and overlays.
+        """.strip()
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -148,6 +169,8 @@ def generate_backimages(
         Space for subtitles and overlays.
         Mobile-friendly readability.
 
+        {format_requirements}
+
         Quality:
         Ultra detailed.
         Cinematic lighting.
@@ -155,7 +178,6 @@ def generate_backimages(
         Sharp focus.
         High contrast.
         Professional digital media quality.
-        16:9 aspect ratio.
 
         Important:
         No text.

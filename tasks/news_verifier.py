@@ -78,6 +78,7 @@ def verify_news(
         6. "isTrue" should be strictly boolean, not string.
         7. If title and description are insufficient for verification, use the Google Search tool to find more information. Only include facts that can be verified with high confidence.
         8. If title and description are blank, empty or cannot be interpreted, you may search the web for recent news and verify one of them, but only if you can find a well-verified news story with enough information to create a detailed summary. The type priority should be: global > politics > tech etc.
+        9. Make sure the "title" encompesses the core virtue of news story, around 5 to 6 words if possible.
 
         News Title: {title}
 

@@ -78,6 +78,7 @@ def run_video_generation_job(pipeline:ProgressPipeline):
             description=job.get("description", ""),
             pipeline=pipeline,
             target_time=STATE.get("target_time", 90),
+            video_type=STATE.get("video_type"),
             upload=STATE.get("upload_job", True),
         )
     except PipelineCancelled:

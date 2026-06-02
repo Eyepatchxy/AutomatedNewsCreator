@@ -5,6 +5,7 @@ import requests
 from dotenv import load_dotenv
 from paths import PROJECT_ROOT, GENERATED_THUMBNAILS_DIR, GENERATED_ARTICLES_DIR
 from gui.components.progress_pipeline import ProgressPipeline
+from gui.state.models import VideoType
 
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -18,6 +19,7 @@ def generate_thumbnail(
     file_name,
     *,
     pipeline:ProgressPipeline,
+    video_type: VideoType = VideoType.FULL,
     model=DEFAULT_MODEL,
     size=DEFAULT_SIZE,
     image_format="png",
@@ -45,6 +47,23 @@ def generate_thumbnail(
     if not title:
         raise ValueError("Article title is missing.")
 
+    if video_type == VideoType.SHORT:
+        format_requirements = """
+        Format requirements:
+        STRICT vertical 9:16 image for YouTube Shorts.
+        Portrait composition only.
+        Do not create a horizontal, square, or 16:9 image.
+        Keep the main subject and headline-safe area centered for mobile vertical viewing.
+        """.strip()
+    else:
+        format_requirements = """
+        Format requirements:
+        STRICT horizontal 16:9 image for a normal YouTube video thumbnail.
+        Landscape composition only.
+        Do not create a vertical, square, or 9:16 image.
+        Reinforce a wide YouTube thumbnail layout with clear readable space.
+        """.strip()
+
     api_key = os.getenv("XAI_API_KEY")
 
     if not api_key:
@@ -70,6 +89,8 @@ def generate_thumbnail(
         Balanced layout with space for large Hindi text.
         Readable on mobile screens.
 
+        {format_requirements}
+
         Visual tone:
         Use colors and mood appropriate for the category:
         - Politics: deep reds, dark contrast, editorial seriousness
@@ -86,7 +107,7 @@ def generate_thumbnail(
         Do not overcrowd with text.
 
         Quality:
-        Ultra detailed, sharp focus, cinematic lighting, realistic faces, high contrast, 16:9 aspect ratio, YouTube thumbnail optimized, premium digital news media quality.
+        Ultra detailed, sharp focus, cinematic lighting, realistic faces, high contrast, YouTube thumbnail optimized, premium digital news media quality.
 
         Avoid:
         Overcrowded composition, too many faces, unreadable text, distorted hands, low quality AI artifacts, fake-looking expressions, excessive clickbait, childish graphics.
