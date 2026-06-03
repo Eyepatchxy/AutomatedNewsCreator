@@ -129,6 +129,21 @@ def page_shell(active: str | None = None) -> None:
     ui.colors(primary="#2563eb", secondary="#0f766e", accent="#f59e0b")
     ui.add_head_html(
         """
+        <script>
+            (() => {
+            const applyAncTheme = () => {
+                document.body?.classList.toggle(
+                    'anc-dark',
+                    localStorage.getItem('anc-theme') === 'dark'
+                );
+            };
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', applyAncTheme);
+            } else {
+                applyAncTheme();
+            }
+            })();
+        </script>
         <style>
             body { background: #f6f8fb; color: #172033; }
             .dashboard-wrap { max-width: 1180px; margin: 0 auto; padding: 28px 22px 48px; }
@@ -139,6 +154,45 @@ def page_shell(active: str | None = None) -> None:
             .muted { color: #64748b; }
             .stage-card { min-width: 142px; }
             .log-box { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+            body.anc-dark { background: #101828; color: #eef2f6; }
+            body.anc-dark .q-layout,
+            body.anc-dark .q-page-container,
+            body.anc-dark .nicegui-content { background: #101828; color: #eef2f6; }
+            body.anc-dark .topbar { border-bottom-color: #243247; background: rgba(16,24,40,.92); color: #eef2f6; }
+            body.anc-dark .surface { background: #182230; border-color: #314158; color: #eef2f6; box-shadow: 0 10px 28px rgba(0,0,0,.18); }
+            body.anc-dark .surface .q-card__section,
+            body.anc-dark .surface .q-item,
+            body.anc-dark .surface .q-toggle__label,
+            body.anc-dark .surface .q-checkbox__label,
+            body.anc-dark .surface .q-radio__label { color: #eef2f6; }
+            body.anc-dark .muted { color: #a8b3c4; }
+            body.anc-dark .text-slate-900 { color: #eef2f6; }
+            body.anc-dark .log-box { background: #0b1220; color: #dce4f0; }
+            body.anc-dark .q-field__control { color: #eef2f6; }
+            body.anc-dark .q-field--outlined .q-field__control::before { border-color: #4b5d75; }
+            body.anc-dark .q-field--outlined.q-field--focused .q-field__control::before,
+            body.anc-dark .q-field--outlined.q-field--focused .q-field__control::after { border-color: #7dd3fc; }
+            body.anc-dark .q-field__native,
+            body.anc-dark .q-field__input,
+            body.anc-dark .q-field__prefix,
+            body.anc-dark .q-field__suffix,
+            body.anc-dark .q-field__label,
+            body.anc-dark .q-field__append,
+            body.anc-dark .q-field__prepend { color: #e5edf7; }
+            body.anc-dark .q-field__native::placeholder,
+            body.anc-dark .q-field__input::placeholder { color: #9aa8ba; opacity: 1; }
+            body.anc-dark .q-menu,
+            body.anc-dark .q-dialog__inner > div { background: #182230; color: #eef2f6; }
+            body.anc-dark .q-item.q-manual-focusable--focused,
+            body.anc-dark .q-item--active,
+            body.anc-dark .q-item:hover { background: #253247; color: #f8fafc; }
+            body.anc-dark .stage-card {
+                background: #111827 !important;
+                border-color: #334155 !important;
+                color: #dbeafe !important;
+            }
+            body.anc-dark .stage-icon,
+            body.anc-dark .stage-status { color: inherit; }
         </style>
         """
     )
@@ -224,7 +278,11 @@ class ProgressPipeline:
                 ui.label("Pipeline").classes("text-xl font-semibold")
                 self.elapsed_label = ui.label("Elapsed: 00:00").classes("muted")
 
-            self.progress = ui.linear_progress(value=0).classes("w-full")
+            with ui.linear_progress(value=0, show_value=False, size="20px").classes("w-full") as progress:
+                self.progress = progress
+                self.progress_value_label = ui.label(self._format_progress(0)).classes(
+                    "absolute-center text-white"
+                ).style("font-size: 0.875rem")
             with ui.row().classes("w-full gap-3"):
                 self.stage_cards: list[dict[str, Any]] = [
                     self._make_stage_card(stage, "running" if i == 0 else "pending")
@@ -261,6 +319,15 @@ class ProgressPipeline:
         stage["icon"].name = stage_icon(status)
         stage["label"].text = status.title()
 
+    @staticmethod
+    def _format_progress(value: float) -> str:
+        percent = max(0.00, min(value, 1.00)) * 100
+        return f"{percent:.2f}".rstrip("0").rstrip(".") + "%"
+
+    def _set_progress(self, value: float) -> None:
+        self.progress.value = value
+        self.progress_value_label.text = self._format_progress(value)
+
     def tick(self) -> None:
         elapsed = int(time.monotonic() - self.started_at)
         self.elapsed_label.text = f"Elapsed: {elapsed // 60:02d}:{elapsed % 60:02d}"
@@ -271,7 +338,7 @@ class ProgressPipeline:
         self._set_stage(self.current_index, "completed")
         self.log.push(f"{self.log_prefix}: {self.stages[self.current_index]} completed")
         self.current_index += 1
-        self.progress.value = self.current_index / len(self.stages)
+        self._set_progress(self.current_index / len(self.stages))
 
         if self.current_index >= len(self.stages):
             self.completed = True

@@ -39,7 +39,11 @@ class ProgressPipeline:
                     self._update_elapsed,
                 )
 
-            self.progress = ui.linear_progress(value=0).classes("w-full")
+            with ui.linear_progress(value=0, show_value=False, size="20px").classes("w-full") as progress:
+                self.progress = progress
+                self.progress_value_label = ui.label(self._format_progress(0)).classes(
+                    "absolute-center text-white"
+                ).style("font-size: 0.875rem")
             with ui.row().classes("w-full gap-3"):
                 self.stage_cards: list[dict[str, Any]] = [
                     self._make_stage_card(stage)
@@ -82,13 +86,22 @@ class ProgressPipeline:
             stage.label = label
         return {"card": card, "icon": icon, "label": label}
     
+    @staticmethod
+    def _format_progress(value: float) -> str:
+        percent = max(0.00, min(value, 1.00)) * 100
+        return f"{percent:.2f}".rstrip("0").rstrip(".") + "%"
+
+    def _set_progress(self, value: float) -> None:
+        self.progress.value = value
+        self.progress_value_label.text = self._format_progress(value)
+
     def _refresh_stage_ui(self, stage: Stage):
         stage.card.classes(
             replace=f"stage-card flex-1 border p-4 {stage_classes(stage.status)}"
         )
         stage.icon.name = stage_icon(stage.status)
         stage.label.text = stage.status.title()
-        self.progress.value = self.calculate_progress()
+        self._set_progress(self.calculate_progress())
 
     def start_stage(self, num: int):
         self.check_cancelled()
@@ -152,7 +165,7 @@ class ProgressPipeline:
             )
 
         self.completed = True
-        self.progress.value = 1.0
+        self._set_progress(1.0)
 
         self.log.push("Process completed")
         self.elapsed_timer.cancel()

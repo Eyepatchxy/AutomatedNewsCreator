@@ -3,6 +3,7 @@ from multiprocessing import freeze_support
 from nicegui import ui
 
 from gui.pages.home_page import home_page
+from gui.pages.settings_page import settings_page
 from gui.pages.channelwise.extraction.add_channel_page import add_channel_page
 from gui.pages.channelwise.extraction.channel_selection_page import channel_selection_page
 from gui.pages.channelwise.extraction.extraction_confirmation_page import extraction_confirmation_page

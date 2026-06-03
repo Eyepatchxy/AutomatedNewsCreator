@@ -14,7 +14,11 @@ def home_page() -> None:
             ui.label("Automated News Creator").classes(
                 "text-center text-5xl font-bold tracking-tight"
             )
-            with ui.row().classes("w-full justify-end"):
+            with ui.row().classes("w-full justify-end gap-2"):
+                # ui.button(
+                #     icon="settings",
+                #     on_click=lambda: ui.navigate.to(get_path("Settings")),
+                # ).props("round flat color=grey-8").tooltip("Settings")
                 ui.button(
                     "Renew Youtube Token",
                     icon="token",
