@@ -10,6 +10,14 @@ ROUTES = [
     },
 
     {
+        "label": "Settings",
+        "path": "/settings",
+        "module": "gui.pages.settings_page",
+        "icon": "settings",
+        "group": "main",
+    },
+
+    {
         "label": "Channel-wise Workflow",
         "path": "/yt",
         "module": "gui.pages.channelwise.yt_workflow_page",
