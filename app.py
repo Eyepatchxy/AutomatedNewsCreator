@@ -1,5 +1,6 @@
 import multiprocessing
 from multiprocessing import freeze_support
+
 from nicegui import ui
 
 from gui.pages.home_page import home_page
@@ -16,15 +17,11 @@ from gui.pages.video_generation.video_configuration_page import video_configurat
 from gui.pages.video_generation.video_progress_page import video_progress_page
 
 
-def main():
-    ui.run(native=True)
-
-
 if __name__ in {"__main__", "__mp_main__"}:
-
-    # only parent should configure multiprocessing
-    if __name__ == "__main__":
-        multiprocessing.set_start_method("fork")
-        freeze_support()
-
-    main()
+    freeze_support()
+    multiprocessing.set_start_method("spawn", force=True)
+    ui.run(
+        title="Automated News Creator",
+        native=True,
+        reload=False,
+    )
